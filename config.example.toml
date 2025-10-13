@@ -1,0 +1,43 @@
+# Example Configuration File for agent-cli
+# Copy this file to ~/.agent-cli/config.toml and fill in your values
+
+[network]
+name = "calibration"  # or "mainnet"
+rpc_url = "https://api.calibration.node.glif.io/rpc/v1"
+chain_id = 314159  # 314 for mainnet
+
+[contracts]
+# Replace with your deployed contract addresses
+identity = "0x0000000000000000000000000000000000000000"
+reputation = "0x0000000000000000000000000000000000000000"
+validation = "0x0000000000000000000000000000000000000000"
+
+[storage]
+# Local IPFS node (optional)
+ipfs_api = "http://127.0.0.1:5001"
+
+# IPFS gateway for viewing content
+ipfs_gateway = "https://ipfs.io/ipfs/"
+
+# Lighthouse API key (get from https://files.lighthouse.storage/)
+lighthouse_api_key = ""
+
+# Web3.Storage token (alternative to Lighthouse)
+web3_storage_token = ""
+
+[wallet]
+# Your wallet private key (keep this secret!)
+# DO NOT commit this file with real keys to version control
+private_key = "0x0000000000000000000000000000000000000000000000000000000000000000"
+
+# Your wallet address
+address = "0x0000000000000000000000000000000000000000"
+
+[mcp]
+# Default timeout for MCP tool calls (seconds)
+default_timeout = 30
+
+# Notes:
+# 1. Keep your private_key secure and never share it
+# 2. Use environment variables for sensitive data in production
+# 3. For mainnet, use: rpc_url = "https://api.node.glif.io/rpc/v1" and chain_id = 314

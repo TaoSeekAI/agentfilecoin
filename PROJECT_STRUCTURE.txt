@@ -1,0 +1,168 @@
+ERC-8004 Agent on Filecoin - 项目结构
+=====================================
+
+aiagent/
+│
+├── 📄 README.md                    # 项目主文档
+├── 📋 CHECKLIST.md                 # 交付检查清单
+├── 📝 PROJECT_STRUCTURE.txt        # 本文件
+├── ⚙️  Makefile                     # 构建和部署脚本
+├── 🔧 config.example.toml          # 配置文件示例
+├── 🚫 .gitignore                   # Git 忽略规则
+│
+├── 📚 docs/                        # 文档目录
+│   ├── DESIGN.md                   # 完整设计文档（核心）
+│   ├── QUICKSTART.md               # 5分钟快速开始
+│   └── PROJECT_SUMMARY.md          # 项目交付总结
+│
+├── 📜 contracts/                   # Solidity 智能合约
+│   ├── foundry.toml                # Foundry 配置
+│   ├── remappings.txt              # 依赖映射
+│   │
+│   ├── src/                        # 合约源码
+│   │   ├── interfaces/             # 接口定义
+│   │   │   ├── IAgentIdentity.sol     # 身份注册表接口
+│   │   │   ├── IAgentReputation.sol   # 声誉注册表接口
+│   │   │   └── IAgentValidation.sol   # 验证注册表接口
+│   │   │
+│   │   ├── AgentIdentity.sol       # 身份合约实现 (ERC-721-like)
+│   │   ├── AgentReputation.sol     # 声誉合约实现
+│   │   └── AgentValidation.sol     # 验证合约实现
+│   │
+│   ├── script/                     # 部署脚本
+│   │   └── Deploy.s.sol            # 统一部署脚本
+│   │
+│   └── test/                       # 测试目录
+│
+└── 🦀 backend/                     # Rust 后端
+    ├── Cargo.toml                  # Rust 项目配置
+    │
+    └── src/                        # 源码目录
+        ├── main.rs                 # CLI 主程序
+        ├── lib.rs                  # 库导出
+        │
+        ├── config.rs               # 配置管理模块
+        │   ├── Config 结构
+        │   ├── 加载/保存配置
+        │   └── 默认路径处理
+        │
+        ├── ipfs.rs                 # IPFS 客户端模块
+        │   ├── IpfsClient
+        │   ├── 上传 JSON/文件
+        │   ├── 下载数据
+        │   ├── Pin/Unpin
+        │   └── CID 验证
+        │
+        ├── filecoin.rs             # Filecoin 存储模块
+        │   ├── LighthouseClient    # Lighthouse API
+        │   ├── Web3StorageClient   # Web3.Storage API
+        │   ├── 上传数据
+        │   ├── Pin CID
+        │   └── 查询状态
+        │
+        ├── contracts.rs            # 智能合约交互模块
+        │   ├── ContractClient
+        │   ├── register_agent()
+        │   ├── get_agent()
+        │   ├── give_feedback()
+        │   ├── get_reputation()
+        │   └── request_validation()
+        │
+        └── mcp.rs                  # MCP 协议处理模块
+            ├── MCPHandler
+            ├── list_tools()
+            ├── call_tool()
+            └── 内置工具 (calculator, echo)
+
+
+核心功能流程
+============
+
+1. Agent 注册流程:
+   用户 → CLI → 准备元数据 → IPFS 上传 → Lighthouse Pin → 合约注册 → 返回 Agent ID
+
+2. 反馈提交流程:
+   用户 → CLI → 构建反馈 → (可选) IPFS 上传详情 → 合约记录 → 后台 Pin
+
+3. MCP 测试流程:
+   用户 → CLI → MCPHandler → 调用工具 → 返回结果
+
+4. 查询流程:
+   用户 → CLI → 合约查询 → (可选) IPFS 获取元数据 → 展示结果
+
+
+CLI 命令总览
+============
+
+agent-cli init              # 初始化配置
+agent-cli register          # 注册新 Agent
+agent-cli query             # 查询 Agent 信息
+agent-cli feedback          # 提交反馈
+agent-cli reputation        # 查询声誉
+agent-cli mcp-test          # 测试 MCP 功能
+agent-cli storage-status    # 检查存储状态
+agent-cli pin               # Pin 数据到 Filecoin
+
+
+技术栈
+======
+
+智能合约层:
+  - Solidity 0.8.23
+  - Foundry
+  - Filecoin EVM
+
+后端服务层:
+  - Rust 1.75+
+  - Alloy (Ethereum 交互)
+  - Tokio (异步运行时)
+  - Clap (CLI 框架)
+
+存储层:
+  - IPFS (内容寻址)
+  - Filecoin (持久化)
+  - Lighthouse API (Pinning 服务)
+
+协议层:
+  - ERC-8004 (Agent 标准)
+  - MCP (Model Context Protocol)
+
+
+部署目标
+========
+
+测试网: Filecoin Calibration (Chain ID: 314159)
+  RPC: https://api.calibration.node.glif.io/rpc/v1
+  Explorer: https://calibration.filscan.io/
+
+主网: Filecoin Mainnet (Chain ID: 314)
+  RPC: https://api.node.glif.io/rpc/v1
+  Explorer: https://filscan.io/
+
+
+开发命令
+========
+
+make build              # 构建所有组件
+make test               # 运行所有测试
+make deploy-calibration # 部署到测试网
+make install            # 安装 CLI 工具
+make clean              # 清理构建产物
+
+
+项目特色
+========
+
+✅ 完全符合 ERC-8004 标准
+✅ IPFS + Filecoin 双层存储
+✅ 完整的 Rust 后端实现
+✅ 命令行友好的 CLI 工具
+✅ MCP 协议集成支持
+✅ 详尽的文档和示例
+✅ 安全性和性能优化
+✅ 测试网部署就绪
+
+
+状态: MVP 完成 ✅
+版本: 0.1.0
+许可: MIT

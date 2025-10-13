@@ -1,0 +1,36 @@
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# Foundry
+cache/
+out/
+broadcast/
+deployment.md
+
+# Environment
+.env
+.env.local
+
+# Config
+.agent-cli/
+config.toml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# IPFS
+.ipfs/
