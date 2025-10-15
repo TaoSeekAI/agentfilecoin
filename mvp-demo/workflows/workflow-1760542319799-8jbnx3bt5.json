@@ -1,0 +1,90 @@
+{
+  "workflowId": "workflow-1760542319799-8jbnx3bt5",
+  "createdAt": "2025-10-15T15:31:59.799Z",
+  "updatedAt": "2025-10-15T15:32:14.353Z",
+  "currentPhase": 1,
+  "status": "initialized",
+  "config": {
+    "nftContract": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+    "startTokenId": 0,
+    "endTokenId": 4,
+    "validatorAddress": null
+  },
+  "phases": {
+    "phase1": {
+      "status": "completed",
+      "result": {
+        "agentId": 76,
+        "agentAddress": "0x1D621356Bc9484F5e5858a00103338579Cba9613",
+        "metadataUri": "ipfs://QmTempqtn88quixnq",
+        "metadata": {
+          "name": "NFT IPFS to Filecoin Migration Agent",
+          "description": "An AI agent that migrates NFT metadata and images from IPFS to Filecoin for permanent storage",
+          "capabilities": {
+            "capabilities": [
+              "nft-scanning",
+              "ipfs-retrieval",
+              "filecoin-upload",
+              "erc8004-validation"
+            ],
+            "version": "1.0.0",
+            "author": "Interactive Workflow System"
+          },
+          "type": "AI Agent",
+          "version": "1.0.0",
+          "createdAt": "2025-10-15T15:32:00.200Z",
+          "owner": "0x1D621356Bc9484F5e5858a00103338579Cba9613"
+        },
+        "txHash": "0xa191fba2bb8fd508080f36b2240644d5461f38a6b21bb4b3ec281729a3820016",
+        "network": {
+          "name": "Ethereum Sepolia",
+          "chainId": "11155111",
+          "rpcUrl": "https://eth-sepolia.public.blastapi.io"
+        },
+        "timestamp": "2025-10-15T15:32:14.340Z"
+      },
+      "startedAt": "2025-10-15T15:31:59.800Z",
+      "updatedAt": "2025-10-15T15:32:14.340Z",
+      "completedAt": "2025-10-15T15:32:14.340Z"
+    },
+    "phase2": {
+      "status": "failed",
+      "result": null,
+      "startedAt": "2025-10-15T15:32:14.342Z",
+      "updatedAt": "2025-10-15T15:32:14.352Z",
+      "failedAt": "2025-10-15T15:32:14.352Z",
+      "error": {
+        "message": "invalid value for Contract target (argument=\"target\", value={  }, code=INVALID_ARGUMENT, version=6.15.0)",
+        "stack": "TypeError: invalid value for Contract target (argument=\"target\", value={  }, code=INVALID_ARGUMENT, version=6.15.0)\n    at makeError (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/node_modules/ethers/lib.esm/utils/errors.js:125:21)\n    at assert (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/node_modules/ethers/lib.esm/utils/errors.js:151:15)\n    at assertArgument (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/node_modules/ethers/lib.esm/utils/errors.js:162:5)\n    at new BaseContract (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/node_modules/ethers/lib.esm/contract/contract.js:541:9)\n    at new Contract (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/node_modules/ethers/lib.esm/contract/contract.js:951:8)\n    at new NFTScanner (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/nft-scanner.js:28:21)\n    at Phase2_ScanNFT.execute (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/workflow-engine/phases/Phase2_ScanNFT.js:42:21)\n    at WorkflowEngine.executePhase (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/workflow-engine/WorkflowEngine.js:104:34)\n    at runTest (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/test-interactive-workflow.js:50:39)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"
+      }
+    },
+    "phase3": {
+      "status": "pending",
+      "result": null
+    },
+    "phase4": {
+      "status": "pending",
+      "result": null
+    },
+    "phase5": {
+      "status": "pending",
+      "result": null
+    },
+    "phase6": {
+      "status": "pending",
+      "result": null
+    },
+    "phase7": {
+      "status": "pending",
+      "result": null
+    }
+  },
+  "userActions": [],
+  "errors": [
+    {
+      "phase": 2,
+      "timestamp": "2025-10-15T15:32:14.353Z",
+      "error": "invalid value for Contract target (argument=\"target\", value={  }, code=INVALID_ARGUMENT, version=6.15.0)"
+    }
+  ]
+}

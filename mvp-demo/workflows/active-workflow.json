@@ -1,0 +1,481 @@
+{
+  "workflowId": "workflow-1760542368904-ek0odo03v",
+  "createdAt": "2025-10-15T15:32:48.904Z",
+  "updatedAt": "2025-10-15T15:33:51.533Z",
+  "currentPhase": 7,
+  "status": "initialized",
+  "config": {
+    "nftContract": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+    "startTokenId": 0,
+    "endTokenId": 4,
+    "validatorAddress": null
+  },
+  "phases": {
+    "phase1": {
+      "status": "completed",
+      "result": {
+        "agentId": 77,
+        "agentAddress": "0x1D621356Bc9484F5e5858a00103338579Cba9613",
+        "metadataUri": "ipfs://QmTemp97vrj3gy48k",
+        "metadata": {
+          "name": "NFT IPFS to Filecoin Migration Agent",
+          "description": "An AI agent that migrates NFT metadata and images from IPFS to Filecoin for permanent storage",
+          "capabilities": {
+            "capabilities": [
+              "nft-scanning",
+              "ipfs-retrieval",
+              "filecoin-upload",
+              "erc8004-validation"
+            ],
+            "version": "1.0.0",
+            "author": "Interactive Workflow System"
+          },
+          "type": "AI Agent",
+          "version": "1.0.0",
+          "createdAt": "2025-10-15T15:32:49.824Z",
+          "owner": "0x1D621356Bc9484F5e5858a00103338579Cba9613"
+        },
+        "txHash": "0xdb62248e114e6566227aba8cf2d35e01b192b0fae41e398f5aaa1a5df9787ac1",
+        "network": {
+          "name": "Ethereum Sepolia",
+          "chainId": "11155111",
+          "rpcUrl": "https://eth-sepolia.public.blastapi.io"
+        },
+        "timestamp": "2025-10-15T15:33:03.979Z"
+      },
+      "startedAt": "2025-10-15T15:32:48.906Z",
+      "updatedAt": "2025-10-15T15:33:03.980Z",
+      "completedAt": "2025-10-15T15:33:03.979Z"
+    },
+    "phase2": {
+      "status": "completed",
+      "result": {
+        "contractInfo": {
+          "address": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+          "name": "Azuki",
+          "symbol": "AZUKI",
+          "type": "ERC721",
+          "totalSupply": 10000
+        },
+        "scanSummary": {
+          "total": 5,
+          "success": 5,
+          "failed": 0
+        },
+        "uniqueCIDs": [
+          "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+          "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg"
+        ],
+        "tokenDetails": [
+          {
+            "tokenId": 0,
+            "owner": "0x2aE6B0630EBb4D155C6e04fCB16840FFA77760AA",
+            "tokenURI": "ipfs://QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4/0",
+            "metadataCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+            "metadata": {
+              "name": "Azuki #0",
+              "image": "ipfs://QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg/0.png",
+              "attributes": [
+                {
+                  "trait_type": "Type",
+                  "value": "Human"
+                },
+                {
+                  "trait_type": "Hair",
+                  "value": "Water"
+                },
+                {
+                  "trait_type": "Clothing",
+                  "value": "Pink Oversized Kimono"
+                },
+                {
+                  "trait_type": "Eyes",
+                  "value": "Striking"
+                },
+                {
+                  "trait_type": "Mouth",
+                  "value": "Frown"
+                },
+                {
+                  "trait_type": "Offhand",
+                  "value": "Monkey King Staff"
+                },
+                {
+                  "trait_type": "Background",
+                  "value": "Off White A"
+                }
+              ]
+            },
+            "imageCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+            "timestamp": 1760542385427
+          },
+          {
+            "tokenId": 1,
+            "owner": "0xC8967D1537F7B995607A1DEa2B0C06E18A9756a2",
+            "tokenURI": "ipfs://QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4/1",
+            "metadataCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+            "metadata": {
+              "name": "Azuki #1",
+              "image": "ipfs://QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg/1.png",
+              "attributes": [
+                {
+                  "trait_type": "Type",
+                  "value": "Human"
+                },
+                {
+                  "trait_type": "Hair",
+                  "value": "Pink Hairband"
+                },
+                {
+                  "trait_type": "Clothing",
+                  "value": "White Qipao with Fur"
+                },
+                {
+                  "trait_type": "Eyes",
+                  "value": "Daydreaming"
+                },
+                {
+                  "trait_type": "Mouth",
+                  "value": "Lipstick"
+                },
+                {
+                  "trait_type": "Offhand",
+                  "value": "Gloves"
+                },
+                {
+                  "trait_type": "Background",
+                  "value": "Off White D"
+                }
+              ]
+            },
+            "imageCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+            "timestamp": 1760542386485
+          },
+          {
+            "tokenId": 2,
+            "owner": "0x9D7526b3A7721E1A1E204b0e79E2938e0F095aE5",
+            "tokenURI": "ipfs://QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4/2",
+            "metadataCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+            "metadata": {
+              "name": "Azuki #2",
+              "image": "ipfs://QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg/2.png",
+              "attributes": [
+                {
+                  "trait_type": "Type",
+                  "value": "Human"
+                },
+                {
+                  "trait_type": "Hair",
+                  "value": "Pink Flowy"
+                },
+                {
+                  "trait_type": "Ear",
+                  "value": "Red Tassel"
+                },
+                {
+                  "trait_type": "Clothing",
+                  "value": "Vest"
+                },
+                {
+                  "trait_type": "Eyes",
+                  "value": "Ruby"
+                },
+                {
+                  "trait_type": "Mouth",
+                  "value": "Chewing"
+                },
+                {
+                  "trait_type": "Background",
+                  "value": "Red"
+                }
+              ]
+            },
+            "imageCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+            "timestamp": 1760542387546
+          },
+          {
+            "tokenId": 3,
+            "owner": "0x8Fae7DEFf5A9296bDfc99b559C90dc8Ec90C22eA",
+            "tokenURI": "ipfs://QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4/3",
+            "metadataCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+            "metadata": {
+              "name": "Azuki #3",
+              "image": "ipfs://QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg/3.png",
+              "attributes": [
+                {
+                  "trait_type": "Type",
+                  "value": "Human"
+                },
+                {
+                  "trait_type": "Hair",
+                  "value": "Green Spiky"
+                },
+                {
+                  "trait_type": "Headgear",
+                  "value": "Frog Headband"
+                },
+                {
+                  "trait_type": "Neck",
+                  "value": "Frog Headphones"
+                },
+                {
+                  "trait_type": "Clothing",
+                  "value": "Green Yukata"
+                },
+                {
+                  "trait_type": "Eyes",
+                  "value": "Careless"
+                },
+                {
+                  "trait_type": "Mouth",
+                  "value": "Grass"
+                },
+                {
+                  "trait_type": "Offhand",
+                  "value": "Katana"
+                },
+                {
+                  "trait_type": "Background",
+                  "value": "Red"
+                }
+              ]
+            },
+            "imageCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+            "timestamp": 1760542388619
+          },
+          {
+            "tokenId": 4,
+            "owner": "0x2aE6B0630EBb4D155C6e04fCB16840FFA77760AA",
+            "tokenURI": "ipfs://QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4/4",
+            "metadataCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+            "metadata": {
+              "name": "Azuki #4",
+              "image": "ipfs://QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg/4.png",
+              "attributes": [
+                {
+                  "trait_type": "Type",
+                  "value": "Human"
+                },
+                {
+                  "trait_type": "Hair",
+                  "value": "Brown Dreadlocks"
+                },
+                {
+                  "trait_type": "Clothing",
+                  "value": "White Qipao with Fur"
+                },
+                {
+                  "trait_type": "Eyes",
+                  "value": "Lightning"
+                },
+                {
+                  "trait_type": "Mouth",
+                  "value": "Smirk"
+                },
+                {
+                  "trait_type": "Offhand",
+                  "value": "Katana"
+                },
+                {
+                  "trait_type": "Background",
+                  "value": "Off White D"
+                }
+              ]
+            },
+            "imageCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+            "timestamp": 1760542389671
+          }
+        ],
+        "scannedRange": {
+          "start": 0,
+          "end": 4
+        },
+        "timestamp": "2025-10-15T15:33:10.173Z"
+      },
+      "startedAt": "2025-10-15T15:33:03.981Z",
+      "updatedAt": "2025-10-15T15:33:10.173Z",
+      "completedAt": "2025-10-15T15:33:10.173Z"
+    },
+    "phase3": {
+      "status": "completed",
+      "result": {
+        "requestHash": "0x4602a9875241b286f5af54c978b7a6825d001bb0c2acc2b624a7e1a50ea48c82",
+        "taskURI": "ipfs://QmTaskv4vkm3yepj",
+        "taskMetadata": {
+          "task": "Migrate 2 IPFS CIDs to Filecoin",
+          "nft": {
+            "contract": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+            "tokenRange": {
+              "start": 0,
+              "end": 4
+            }
+          },
+          "ipfsCIDs": [
+            "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+            "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg"
+          ],
+          "createdAt": "2025-10-15T15:33:10.192Z",
+          "requester": "0x1D621356Bc9484F5e5858a00103338579Cba9613"
+        },
+        "validatorAddress": "0xf3E6B8c07d7369f78e85b1139C81B54710e57846",
+        "agentId": 77,
+        "txHash": "0xa4a151570f1894c21e33f57a67ef0d2f634d5c4163a13a0209fdb7768b18ea07",
+        "timestamp": "2025-10-15T15:33:28.709Z"
+      },
+      "startedAt": "2025-10-15T15:33:10.175Z",
+      "updatedAt": "2025-10-15T15:33:28.709Z",
+      "completedAt": "2025-10-15T15:33:28.709Z"
+    },
+    "phase4": {
+      "status": "completed",
+      "result": {
+        "summary": {
+          "total": 2,
+          "successful": 2,
+          "failed": 0,
+          "successRate": 100
+        },
+        "results": [
+          {
+            "ipfsCid": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+            "filecoinPieceCid": {
+              "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+            },
+            "filecoinCarCid": {
+              "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+            },
+            "size": 8352421,
+            "success": true
+          },
+          {
+            "ipfsCid": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+            "filecoinPieceCid": {
+              "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+            },
+            "filecoinCarCid": {
+              "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+            },
+            "size": 8436653,
+            "success": true
+          }
+        ],
+        "timestamp": "2025-10-15T15:33:36.474Z"
+      },
+      "startedAt": "2025-10-15T15:33:28.710Z",
+      "updatedAt": "2025-10-15T15:33:36.474Z",
+      "completedAt": "2025-10-15T15:33:36.474Z"
+    },
+    "phase5": {
+      "status": "completed",
+      "result": {
+        "proofMetadata": {
+          "taskURI": "ipfs://QmTaskv4vkm3yepj",
+          "results": [
+            {
+              "ipfsCid": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+              "filecoinPieceCid": {
+                "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+              },
+              "filecoinCarCid": {
+                "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+              },
+              "size": 8352421,
+              "success": true
+            },
+            {
+              "ipfsCid": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+              "filecoinPieceCid": {
+                "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+              },
+              "filecoinCarCid": {
+                "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+              },
+              "size": 8436653,
+              "success": true
+            }
+          ],
+          "summary": {
+            "total": 2,
+            "successful": 2,
+            "failed": 0
+          },
+          "createdAt": "2025-10-15T15:33:36.490Z"
+        },
+        "proofURI": "ipfs://QmProofi8fdqoonexn",
+        "migrationSummary": {
+          "total": 2,
+          "successful": 2,
+          "failed": 0,
+          "successRate": 100
+        },
+        "timestamp": "2025-10-15T15:33:36.490Z"
+      },
+      "startedAt": "2025-10-15T15:33:36.476Z",
+      "updatedAt": "2025-10-15T15:33:36.490Z",
+      "completedAt": "2025-10-15T15:33:36.490Z"
+    },
+    "phase6": {
+      "status": "completed",
+      "result": {
+        "approved": true,
+        "requestHash": "0x4602a9875241b286f5af54c978b7a6825d001bb0c2acc2b624a7e1a50ea48c82",
+        "proofURI": "ipfs://QmProofi8fdqoonexn",
+        "validatorAddress": "0xf3E6B8c07d7369f78e85b1139C81B54710e57846",
+        "txHash": "0x1dd34c9bbbc39b4872b99c18097cb86b997280345f35876dbd0685940d96f27a",
+        "timestamp": "2025-10-15T15:33:50.568Z"
+      },
+      "startedAt": "2025-10-15T15:33:36.492Z",
+      "updatedAt": "2025-10-15T15:33:50.568Z",
+      "completedAt": "2025-10-15T15:33:50.568Z"
+    },
+    "phase7": {
+      "status": "completed",
+      "result": {
+        "title": "NFT IPFS to Filecoin Migration - Complete Report",
+        "workflowId": "workflow-1760542368904-ek0odo03v",
+        "completedAt": "2025-10-15T15:33:51.533Z",
+        "agent": {
+          "agentId": 77,
+          "address": "0x1D621356Bc9484F5e5858a00103338579Cba9613",
+          "metadataUri": "ipfs://QmTemp97vrj3gy48k",
+          "registrationTx": "0xdb62248e114e6566227aba8cf2d35e01b192b0fae41e398f5aaa1a5df9787ac1"
+        },
+        "nftScan": {
+          "contract": {
+            "address": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+            "name": "Azuki",
+            "symbol": "AZUKI",
+            "type": "ERC721",
+            "totalSupply": 10000
+          },
+          "scannedTokens": 5,
+          "uniqueCIDs": 2
+        },
+        "validation": {
+          "requestHash": "0x4602a9875241b286f5af54c978b7a6825d001bb0c2acc2b624a7e1a50ea48c82",
+          "validator": "0xf3E6B8c07d7369f78e85b1139C81B54710e57846",
+          "status": "Approved",
+          "approved": true,
+          "requestTx": "0xa4a151570f1894c21e33f57a67ef0d2f634d5c4163a13a0209fdb7768b18ea07",
+          "responseTx": "0x1dd34c9bbbc39b4872b99c18097cb86b997280345f35876dbd0685940d96f27a"
+        },
+        "migration": {
+          "total": 2,
+          "successful": 2,
+          "failed": 0,
+          "successRate": 100
+        },
+        "networks": {
+          "nft": "Ethereum Mainnet",
+          "validation": "Ethereum Sepolia",
+          "filecoin": "Filecoin Calibration"
+        }
+      },
+      "startedAt": "2025-10-15T15:33:50.570Z",
+      "updatedAt": "2025-10-15T15:33:51.533Z",
+      "completedAt": "2025-10-15T15:33:51.533Z"
+    }
+  },
+  "userActions": [],
+  "errors": []
+}

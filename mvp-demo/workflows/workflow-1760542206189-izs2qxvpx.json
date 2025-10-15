@@ -1,0 +1,45 @@
+{
+  "workflowId": "workflow-1760542206189-izs2qxvpx",
+  "createdAt": "2025-10-15T15:30:06.189Z",
+  "updatedAt": "2025-10-15T15:30:06.189Z",
+  "currentPhase": 0,
+  "status": "initialized",
+  "config": {
+    "nftContract": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+    "startTokenId": 0,
+    "endTokenId": 4,
+    "validatorAddress": null
+  },
+  "phases": {
+    "phase1": {
+      "status": "pending",
+      "result": null
+    },
+    "phase2": {
+      "status": "pending",
+      "result": null
+    },
+    "phase3": {
+      "status": "pending",
+      "result": null
+    },
+    "phase4": {
+      "status": "pending",
+      "result": null
+    },
+    "phase5": {
+      "status": "pending",
+      "result": null
+    },
+    "phase6": {
+      "status": "pending",
+      "result": null
+    },
+    "phase7": {
+      "status": "pending",
+      "result": null
+    }
+  },
+  "userActions": [],
+  "errors": []
+}

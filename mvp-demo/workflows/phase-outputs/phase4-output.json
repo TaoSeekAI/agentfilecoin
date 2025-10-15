@@ -1,0 +1,33 @@
+{
+  "summary": {
+    "total": 2,
+    "successful": 2,
+    "failed": 0,
+    "successRate": 100
+  },
+  "results": [
+    {
+      "ipfsCid": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+      "filecoinPieceCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "filecoinCarCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "size": 8352421,
+      "success": true
+    },
+    {
+      "ipfsCid": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+      "filecoinPieceCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "filecoinCarCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "size": 8436653,
+      "success": true
+    }
+  ],
+  "timestamp": "2025-10-15T15:33:36.474Z"
+}

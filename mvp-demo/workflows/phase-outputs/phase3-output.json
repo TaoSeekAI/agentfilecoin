@@ -1,0 +1,24 @@
+{
+  "requestHash": "0x4602a9875241b286f5af54c978b7a6825d001bb0c2acc2b624a7e1a50ea48c82",
+  "taskURI": "ipfs://QmTaskv4vkm3yepj",
+  "taskMetadata": {
+    "task": "Migrate 2 IPFS CIDs to Filecoin",
+    "nft": {
+      "contract": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+      "tokenRange": {
+        "start": 0,
+        "end": 4
+      }
+    },
+    "ipfsCIDs": [
+      "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+      "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg"
+    ],
+    "createdAt": "2025-10-15T15:33:10.192Z",
+    "requester": "0x1D621356Bc9484F5e5858a00103338579Cba9613"
+  },
+  "validatorAddress": "0xf3E6B8c07d7369f78e85b1139C81B54710e57846",
+  "agentId": 77,
+  "txHash": "0xa4a151570f1894c21e33f57a67ef0d2f634d5c4163a13a0209fdb7768b18ea07",
+  "timestamp": "2025-10-15T15:33:28.709Z"
+}

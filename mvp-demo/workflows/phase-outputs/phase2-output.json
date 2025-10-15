@@ -1,0 +1,243 @@
+{
+  "contractInfo": {
+    "address": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+    "name": "Azuki",
+    "symbol": "AZUKI",
+    "type": "ERC721",
+    "totalSupply": 10000
+  },
+  "scanSummary": {
+    "total": 5,
+    "success": 5,
+    "failed": 0
+  },
+  "uniqueCIDs": [
+    "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+    "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg"
+  ],
+  "tokenDetails": [
+    {
+      "tokenId": 0,
+      "owner": "0x2aE6B0630EBb4D155C6e04fCB16840FFA77760AA",
+      "tokenURI": "ipfs://QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4/0",
+      "metadataCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+      "metadata": {
+        "name": "Azuki #0",
+        "image": "ipfs://QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg/0.png",
+        "attributes": [
+          {
+            "trait_type": "Type",
+            "value": "Human"
+          },
+          {
+            "trait_type": "Hair",
+            "value": "Water"
+          },
+          {
+            "trait_type": "Clothing",
+            "value": "Pink Oversized Kimono"
+          },
+          {
+            "trait_type": "Eyes",
+            "value": "Striking"
+          },
+          {
+            "trait_type": "Mouth",
+            "value": "Frown"
+          },
+          {
+            "trait_type": "Offhand",
+            "value": "Monkey King Staff"
+          },
+          {
+            "trait_type": "Background",
+            "value": "Off White A"
+          }
+        ]
+      },
+      "imageCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+      "timestamp": 1760542385427
+    },
+    {
+      "tokenId": 1,
+      "owner": "0xC8967D1537F7B995607A1DEa2B0C06E18A9756a2",
+      "tokenURI": "ipfs://QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4/1",
+      "metadataCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+      "metadata": {
+        "name": "Azuki #1",
+        "image": "ipfs://QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg/1.png",
+        "attributes": [
+          {
+            "trait_type": "Type",
+            "value": "Human"
+          },
+          {
+            "trait_type": "Hair",
+            "value": "Pink Hairband"
+          },
+          {
+            "trait_type": "Clothing",
+            "value": "White Qipao with Fur"
+          },
+          {
+            "trait_type": "Eyes",
+            "value": "Daydreaming"
+          },
+          {
+            "trait_type": "Mouth",
+            "value": "Lipstick"
+          },
+          {
+            "trait_type": "Offhand",
+            "value": "Gloves"
+          },
+          {
+            "trait_type": "Background",
+            "value": "Off White D"
+          }
+        ]
+      },
+      "imageCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+      "timestamp": 1760542386485
+    },
+    {
+      "tokenId": 2,
+      "owner": "0x9D7526b3A7721E1A1E204b0e79E2938e0F095aE5",
+      "tokenURI": "ipfs://QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4/2",
+      "metadataCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+      "metadata": {
+        "name": "Azuki #2",
+        "image": "ipfs://QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg/2.png",
+        "attributes": [
+          {
+            "trait_type": "Type",
+            "value": "Human"
+          },
+          {
+            "trait_type": "Hair",
+            "value": "Pink Flowy"
+          },
+          {
+            "trait_type": "Ear",
+            "value": "Red Tassel"
+          },
+          {
+            "trait_type": "Clothing",
+            "value": "Vest"
+          },
+          {
+            "trait_type": "Eyes",
+            "value": "Ruby"
+          },
+          {
+            "trait_type": "Mouth",
+            "value": "Chewing"
+          },
+          {
+            "trait_type": "Background",
+            "value": "Red"
+          }
+        ]
+      },
+      "imageCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+      "timestamp": 1760542387546
+    },
+    {
+      "tokenId": 3,
+      "owner": "0x8Fae7DEFf5A9296bDfc99b559C90dc8Ec90C22eA",
+      "tokenURI": "ipfs://QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4/3",
+      "metadataCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+      "metadata": {
+        "name": "Azuki #3",
+        "image": "ipfs://QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg/3.png",
+        "attributes": [
+          {
+            "trait_type": "Type",
+            "value": "Human"
+          },
+          {
+            "trait_type": "Hair",
+            "value": "Green Spiky"
+          },
+          {
+            "trait_type": "Headgear",
+            "value": "Frog Headband"
+          },
+          {
+            "trait_type": "Neck",
+            "value": "Frog Headphones"
+          },
+          {
+            "trait_type": "Clothing",
+            "value": "Green Yukata"
+          },
+          {
+            "trait_type": "Eyes",
+            "value": "Careless"
+          },
+          {
+            "trait_type": "Mouth",
+            "value": "Grass"
+          },
+          {
+            "trait_type": "Offhand",
+            "value": "Katana"
+          },
+          {
+            "trait_type": "Background",
+            "value": "Red"
+          }
+        ]
+      },
+      "imageCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+      "timestamp": 1760542388619
+    },
+    {
+      "tokenId": 4,
+      "owner": "0x2aE6B0630EBb4D155C6e04fCB16840FFA77760AA",
+      "tokenURI": "ipfs://QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4/4",
+      "metadataCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+      "metadata": {
+        "name": "Azuki #4",
+        "image": "ipfs://QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg/4.png",
+        "attributes": [
+          {
+            "trait_type": "Type",
+            "value": "Human"
+          },
+          {
+            "trait_type": "Hair",
+            "value": "Brown Dreadlocks"
+          },
+          {
+            "trait_type": "Clothing",
+            "value": "White Qipao with Fur"
+          },
+          {
+            "trait_type": "Eyes",
+            "value": "Lightning"
+          },
+          {
+            "trait_type": "Mouth",
+            "value": "Smirk"
+          },
+          {
+            "trait_type": "Offhand",
+            "value": "Katana"
+          },
+          {
+            "trait_type": "Background",
+            "value": "Off White D"
+          }
+        ]
+      },
+      "imageCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+      "timestamp": 1760542389671
+    }
+  ],
+  "scannedRange": {
+    "start": 0,
+    "end": 4
+  },
+  "timestamp": "2025-10-15T15:33:10.173Z"
+}
