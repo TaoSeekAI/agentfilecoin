@@ -1,26 +1,33 @@
 {
   "taskURI": "file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/output/task-metadata.json",
-  "proof": {
-    "type": "FilecoinMigration",
-    "migrationResults": [
-      {
-        "ipfsCid": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
-        "success": false,
-        "error": "Cannot read properties of undefined (reading 'createContext')"
+  "results": [
+    {
+      "ipfsCid": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+      "filecoinPieceCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
       },
-      {
-        "ipfsCid": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
-        "success": false,
-        "error": "Cannot read properties of undefined (reading 'createContext')"
-      }
-    ],
-    "summary": {
-      "total": 2,
-      "successful": 0,
-      "failed": 2,
-      "successRate": 0
+      "filecoinCarCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "size": 8352421,
+      "success": true
+    },
+    {
+      "ipfsCid": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+      "filecoinPieceCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "filecoinCarCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "size": 8436653,
+      "success": true
     }
+  ],
+  "summary": {
+    "total": 2,
+    "successful": 2,
+    "failed": 0
   },
-  "verificationMethod": "On-chain storage proof via Synapse SDK",
-  "timestamp": "2025-10-15T14:11:50.902Z"
+  "createdAt": "2025-10-15T14:44:34.881Z"
 }

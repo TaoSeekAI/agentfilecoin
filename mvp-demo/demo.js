@@ -12,7 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import { NFTScanner } from './nft-scanner.js';
 import { FilecoinUploader } from './filecoin-uploader.js';
-import { ERC8004Client } from './erc8004-client.js';
+import { ERC8004OfficialClient } from './erc8004-official-client.js';
 
 // Configuration
 const CONFIG = {
@@ -203,7 +203,7 @@ async function main() {
     );
 
     console.log(`📡 ERC8004Client: Using ${CONFIG.validationNetwork.name} (Chain ID: ${CONFIG.validationNetwork.chainId})`);
-    const erc8004Client = new ERC8004Client(
+    const erc8004Client = new ERC8004OfficialClient(
       validationProvider,
       signer,
       CONFIG.identityContract,
@@ -287,9 +287,18 @@ async function main() {
 
     const taskURI = saveMetadata(taskMetadata, 'task-metadata.json');
 
+    // For MVP, use a different test address as validator (ERC-8004 doesn't allow self-validation)
+    // This is a well-known test address: Ethereum Foundation donation address
+    const validatorAddress = '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe';
+
+    console.log('\n⚠️  Note: Using test validator address for MVP');
+    console.log(`   Validator: ${validatorAddress}`);
+    console.log('   In production, this would be a registered validator service\n');
+
     const validationRequest = await erc8004Client.createValidationRequest(
       agentId,
-      taskURI
+      taskURI,
+      validatorAddress
     );
 
     const requestHash = validationRequest.requestHash;
@@ -331,18 +340,22 @@ async function main() {
 
     const proofURI = saveMetadata(proofMetadata, 'proof-metadata.json');
 
-    console.log('\n⚠️  Note: In production, validator would be a different address');
-    console.log('   For MVP demo, using validator 0x0000...0001 (simulated)');
-
-    // Submit validation with proof (isValid = true for successful migration)
-    const isValid = migrationResult.summary.successful > 0;
-    const validationSubmission = await erc8004Client.submitValidation(requestHash, isValid, proofURI);
-
-    console.log('\n📊 Validation Submission Result:');
-    console.log(`   Request Hash: ${requestHash}`);
-    console.log(`   Is Valid: ${isValid}`);
+    console.log('\n⚠️  MVP Note: Skipping validation response submission');
+    console.log('   Reason: Only the designated validator can submit validation responses');
+    console.log(`   Validator address: ${validatorAddress}`);
+    console.log('   In production: The validator would review proof and submit validation response');
+    console.log('\n📊 Proof Generated:');
     console.log(`   Proof URI: ${proofURI}`);
-    console.log(`   TX: ${validationSubmission.txHash}`);
+    console.log(`   Migration Success: ${migrationResult.summary.successful}/${migrationResult.summary.total} CIDs`);
+    console.log(`   Ready for validator review`);
+
+    // For MVP, we'll simulate the validation submission object
+    const validationSubmission = {
+      requestHash,
+      proofURI,
+      txHash: null, // Would be set by validator
+      note: 'Validation response requires validator signature'
+    };
 
     // ========================================================================
     // PHASE 7: Verify and Generate Final Report
@@ -354,8 +367,19 @@ async function main() {
     // Query final agent state
     const finalAgentState = await erc8004Client.getAgent(agentId);
 
-    // Query final validation state
+    console.log('\n📊 Final Agent State:');
+    console.log(`   Agent ID: ${agentId}`);
+    console.log(`   Owner: ${finalAgentState.owner}`);
+    console.log(`   Active: ${finalAgentState.isActive}`);
+    console.log(`   Metadata URI: ${finalAgentState.metadataURI}`);
+
+    // Query validation request state (will be "pending" since validator hasn't responded)
     const finalValidationState = await erc8004Client.getValidationRequest(requestHash);
+
+    console.log('\n📊 Validation Request State:');
+    console.log(`   Request Hash: ${requestHash}`);
+    console.log(`   Status: Pending (awaiting validator response)`);
+    console.log(`   Validator: ${validatorAddress}`);
 
     // Generate final report
     const finalReport = {
@@ -387,14 +411,12 @@ async function main() {
       },
       validation: {
         requestHash,
-        status: finalValidationState.status,
-        isValid: finalValidationState.isValid,
-        workURI: finalValidationState.workURI,
-        proofURI: finalValidationState.proofURI,
-        requestedAt: new Date(finalValidationState.requestedAt * 1000).toISOString(),
-        completedAt: finalValidationState.completedAt ? new Date(finalValidationState.completedAt * 1000).toISOString() : null,
+        status: 'Pending',
+        validator: validatorAddress,
+        taskURI: taskURI,
+        proofURI: proofURI,
         requestTx: validationRequest.txHash,
-        validationTx: validationSubmission.txHash
+        note: 'Awaiting validator response (requires validator signature)'
       },
       nftScan: {
         contract: scanResult.contractInfo,
@@ -433,8 +455,7 @@ async function main() {
     console.log(`   Validation Network: ${CONFIG.validationNetwork.name} (Chain ID: ${CONFIG.validationNetwork.chainId})`);
     console.log(`   ERC-8004 Agent ID: ${agentId}`);
     console.log(`   Validation Request Hash: ${requestHash}`);
-    console.log(`   Validation Status: ${finalValidationState.status}`);
-    console.log(`   Validation Result: ${finalValidationState.isValid ? '✅ Valid' : '❌ Invalid'}`);
+    console.log(`   Validation Status: ⏳ Pending (awaiting validator)`);
     console.log(`   NFT Contract: ${CONFIG.nftContract}`);
     console.log(`   Tokens Scanned: ${scanResult.scanResults.summary.total}`);
     console.log(`   Unique IPFS CIDs: ${uniqueCIDs.length}`);
@@ -448,7 +469,6 @@ async function main() {
     console.log('\n🔗 Transactions:');
     console.log(`   Agent Registration: ${agentRegistration.txHash}`);
     console.log(`   Validation Request: ${validationRequest.txHash}`);
-    console.log(`   Validation Submission: ${validationSubmission.txHash}`);
 
     console.log('\n✅ All data saved to: ' + path.resolve(CONFIG.outputDir));
 

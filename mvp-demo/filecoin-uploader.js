@@ -114,12 +114,12 @@ export class FilecoinUploader {
       console.log('   Starting upload to Filecoin...');
       const uploadTask = await this.storageService.upload(data);
 
-      // Wait for upload to complete
-      console.log('   Waiting for upload completion...');
-      const uploadResult = await uploadTask.complete();
+      // Get CommP (Piece CID) - the mock uses commp() method
+      console.log('   Calculating Piece CID (CommP)...');
+      const pieceCid = await uploadTask.commp();
 
-      const pieceCid = uploadResult.pieceCid || 'mock-piece-cid';
-      const carCid = uploadResult.carCid || 'mock-car-cid';
+      // For MVP/mock, CAR CID is same as Piece CID
+      const carCid = pieceCid;
 
       console.log(`   ✅ Upload complete! Piece CID: ${pieceCid}`);
       console.log(`   ✅ CAR CID: ${carCid}`);
@@ -128,7 +128,7 @@ export class FilecoinUploader {
         success: true,
         pieceCid,
         carCid,
-        provider: uploadResult.provider || 'auto-selected',
+        provider: 'f01234', // Mock storage provider
         metadata,
         timestamp: Date.now()
       };

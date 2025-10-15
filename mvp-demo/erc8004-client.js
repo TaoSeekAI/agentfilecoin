@@ -7,9 +7,9 @@ import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
 
-// Minimal ABIs for our simplified ERC-8004 contracts
+// Our Simplified ERC-8004 Contract ABIs
 const AGENT_IDENTITY_ABI = [
-  // ERC-8004 Registration (simplified interface)
+  // Simplified ERC-8004 Registration (FREE registration)
   'function register(string calldata metadataURI) external payable returns (uint256 agentId)',
   'function getAgent(uint256 agentId) external view returns (address owner, string metadataURI, uint256 registeredAt, bool isActive)',
   'function registrationFee() external view returns (uint256)',
@@ -18,12 +18,10 @@ const AGENT_IDENTITY_ABI = [
   'function ownerOf(uint256 tokenId) external view returns (address)',
   'function tokenURI(uint256 tokenId) external view returns (string)',
   'function balanceOf(address owner) external view returns (uint256)',
-  'function name() external view returns (string)',
-  'function symbol() external view returns (string)',
 
   // Events
-  'event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)',
-  'event AgentRegistered(uint256 indexed agentId, address indexed owner, string metadataURI, uint256 timestamp)'
+  'event AgentRegistered(uint256 indexed agentId, address indexed owner, string metadataURI, uint256 timestamp)',
+  'event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)'
 ];
 
 const AGENT_VALIDATION_ABI = [
@@ -60,14 +58,7 @@ export class ERC8004Client {
   }
 
   /**
-   * Get registration fee from contract
-   */
-  async getRegistrationFee() {
-    return await this.identityContract.registrationFee();
-  }
-
-  /**
-   * Register an agent with ERC-8004 (simplified interface)
+   * Register an agent with our simplified ERC-8004 contract
    */
   async registerAgent(metadataURI) {
     console.log('\n📝 Registering Agent with ERC-8004...');
@@ -75,15 +66,15 @@ export class ERC8004Client {
     console.log(`   Metadata URI: ${metadataURI}`);
 
     try {
-      // Get registration fee
-      const fee = await this.getRegistrationFee();
-      console.log(`   Registration Fee: ${ethers.formatEther(fee)} FIL (NFT mint)`);
+      // Check registration fee (should be 0 for our contract)
+      const fee = await this.identityContract.registrationFee();
+      console.log(`   Registration Fee: ${ethers.formatEther(fee)} ETH`);
 
       // Check balance for gas
       const balance = await this.provider.getBalance(this.signer.address);
-      console.log(`   Current Balance: ${ethers.formatEther(balance)} FIL`);
+      console.log(`   Current Balance: ${ethers.formatEther(balance)} ETH`);
 
-      // Register with simplified interface
+      // Register
       console.log('\n   Sending registration transaction...');
       const tx = await this.identityContract.register(metadataURI, { value: fee });
 

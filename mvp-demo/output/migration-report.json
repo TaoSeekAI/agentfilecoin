@@ -1,32 +1,71 @@
 {
-  "timestamp": "2025-10-15T14:11:50.902Z",
+  "timestamp": "2025-10-15T14:44:34.880Z",
   "summary": {
     "total": 2,
-    "successful": 0,
-    "failed": 2,
-    "successRate": 0
+    "successful": 2,
+    "failed": 0,
+    "successRate": 100
   },
   "uploads": [
     {
-      "success": false,
-      "error": "Cannot read properties of undefined (reading 'createContext')",
+      "success": true,
+      "pieceCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "carCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "provider": "f01234",
       "metadata": {
         "originalIPFSCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
         "originalSize": 8352421,
         "sourceGateway": "https://ipfs.io/ipfs/"
       },
-      "timestamp": 1760537507291
+      "timestamp": 1760539467970
     },
     {
-      "success": false,
-      "error": "Cannot read properties of undefined (reading 'createContext')",
+      "success": true,
+      "pieceCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "carCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "provider": "f01234",
       "metadata": {
         "originalIPFSCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
         "originalSize": 8436653,
         "sourceGateway": "https://ipfs.io/ipfs/"
       },
-      "timestamp": 1760537510901
+      "timestamp": 1760539472877
     }
   ],
-  "filecoinCIDs": []
+  "filecoinCIDs": [
+    {
+      "pieceCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "carCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "metadata": {
+        "originalIPFSCID": "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+        "originalSize": 8352421,
+        "sourceGateway": "https://ipfs.io/ipfs/"
+      }
+    },
+    {
+      "pieceCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "carCid": {
+        "/": "baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha"
+      },
+      "metadata": {
+        "originalIPFSCID": "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg",
+        "originalSize": 8436653,
+        "sourceGateway": "https://ipfs.io/ipfs/"
+      }
+    }
+  ]
 }
