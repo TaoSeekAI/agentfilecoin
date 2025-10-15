@@ -28,15 +28,24 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const RPC_URL = process.env.FILECOIN_NETWORK_RPC_URL || 'https://api.calibration.node.glif.io/rpc/v1';
 const WALLET_ADDRESS = '0xB34d4c8E3AcCB5FA62455228281649Be525D4e59';
 
-// Test metadata (small size to conserve USDFC)
+// Test metadata - must be >= 1MB for Storage Provider minimum size
+// Generate 1.1 MB of test data
+const MIN_SIZE = 1048576; // 1 MB minimum required by Storage Provider
+const TARGET_SIZE = Math.ceil(MIN_SIZE * 1.1); // 1.1 MB to be safe
+
 const TEST_METADATA = {
-  name: 'Test NFT Metadata',
-  description: 'Small test upload to verify Filecoin integration',
+  name: 'Test NFT Metadata - Filecoin Upload',
+  description: 'Test upload to verify Filecoin integration with real Storage Provider',
   tokenId: 0,
   timestamp: new Date().toISOString(),
   network: 'Filecoin Calibration Testnet',
-  wallet: WALLET_ADDRESS
+  wallet: WALLET_ADDRESS,
+  // Padding to reach minimum size requirement (1MB)
+  padding: 'X'.repeat(TARGET_SIZE)
 };
+
+console.log(`⚠️  Note: Storage Provider requires minimum ${(MIN_SIZE / 1024 / 1024).toFixed(2)} MB`);
+console.log(`   Generating ${(TARGET_SIZE / 1024 / 1024).toFixed(2)} MB test data\n`);
 
 function formatUSDFC(amount) {
   return `${(Number(amount) / 1e18).toFixed(6)} USDFC`;
