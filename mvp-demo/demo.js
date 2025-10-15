@@ -11,7 +11,7 @@ import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
 import { NFTScanner } from './nft-scanner.js';
-import { FilecoinUploaderReal } from './filecoin-uploader-real.js';
+import { FilecoinUploaderPDP } from './filecoin-uploader-pdp.js';
 import { ERC8004OfficialClient } from './erc8004-official-client.js';
 
 // Configuration
@@ -218,11 +218,8 @@ async function main() {
       CONFIG.ipfsGateway
     );
 
-    console.log(`📡 FilecoinUploader: Using Filecoin Calibration network (Real Mode)`);
-    const filecoinUploader = new FilecoinUploaderReal(
-      CONFIG.privateKey,
-      CONFIG.filecoinNetwork.rpcUrl
-    );
+    console.log(`📡 FilecoinUploader: Using Real Filecoin PDP (Calibration Testnet)`);
+    const filecoinUploader = new FilecoinUploaderPDP();
 
     console.log(`📡 ERC8004Client: Using ${CONFIG.validationNetwork.name} (Chain ID: ${CONFIG.validationNetwork.chainId})`);
     const erc8004Client = new ERC8004OfficialClient(

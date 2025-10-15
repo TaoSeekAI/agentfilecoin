@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { PhaseBase } from './PhaseBase.js';
 import { ERC8004OfficialClient } from '../../erc8004-official-client.js';
-import { FilecoinUploaderReal } from '../../filecoin-uploader-real.js';
+import { FilecoinUploaderPDP } from '../../filecoin-uploader-pdp.js';
 
 export class Phase5_GenerateProof extends PhaseBase {
   constructor() {
@@ -43,11 +43,8 @@ export class Phase5_GenerateProof extends PhaseBase {
     // 上传证明元数据到 Filecoin
     this.log('\n📤 Uploading proof metadata to Filecoin...');
 
-    // 初始化 Filecoin uploader
-    const filecoinUploader = new FilecoinUploaderReal(
-      process.env.PRIVATE_KEY,
-      process.env.FILECOIN_NETWORK_RPC_URL
-    );
+    // 初始化 Real Filecoin PDP uploader
+    const filecoinUploader = new FilecoinUploaderPDP();
     await filecoinUploader.initialize();
 
     // 保存本地副本
