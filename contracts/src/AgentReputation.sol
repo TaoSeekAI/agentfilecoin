@@ -40,8 +40,8 @@ contract AgentReputation is IAgentReputation {
     mapping(address => mapping(uint256 => uint256)) private _lastFeedbackTime;
 
     modifier agentExists(uint256 agentId) {
-        (address agentOwner,,,) = identityRegistry.getAgent(agentId);
-        require(agentOwner != address(0), "Agent does not exist");
+        // This check relies on ownerOf reverting for non-existent tokens.
+        require(identityRegistry.ownerOf(agentId) != address(0), "Agent does not exist");
         _;
     }
 
@@ -62,6 +62,11 @@ contract AgentReputation is IAgentReputation {
         string[] calldata tags,
         string calldata fileURI
     ) external agentExists(agentId) returns (uint256 feedbackId) {
+        // --- SECURITY: Prevent self-feedback ---
+        address agentOwner = identityRegistry.ownerOf(agentId);
+        require(msg.sender != agentOwner, "Self-feedback not allowed");
+        // ---
+
         require(score <= 100, "Score must be 0-100");
         require(
             block.timestamp >= _lastFeedbackTime[msg.sender][agentId] + FEEDBACK_COOLDOWN,
@@ -111,7 +116,7 @@ contract AgentReputation is IAgentReputation {
         require(!feedback.revoked, "Feedback is revoked");
 
         // Check if caller is agent owner
-        (address agentOwner,,,) = identityRegistry.getAgent(feedback.agentId);
+        address agentOwner = identityRegistry.ownerOf(feedback.agentId);
         require(msg.sender == agentOwner, "Not agent owner");
 
         feedback.response = response;

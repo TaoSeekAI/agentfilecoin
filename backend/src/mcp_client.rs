@@ -231,7 +231,7 @@ mod base64 {
         use std::io::Write;
         let mut buf = Vec::new();
         {
-            let mut encoder = base64::write::EncoderWriter::new(&mut buf, base64::STANDARD);
+            let mut encoder = base64::write::EncoderWriter::new(&mut buf, &base64::engine::general_purpose::STANDARD);
             encoder.write_all(data).unwrap();
         }
         String::from_utf8(buf).unwrap()
@@ -239,7 +239,7 @@ mod base64 {
 
     pub fn decode(s: &str) -> Result<Vec<u8>> {
         use std::io::Read;
-        let mut decoder = base64::read::DecoderReader::new(s.as_bytes(), base64::STANDARD);
+        let mut decoder = base64::read::DecoderReader::new(s.as_bytes(), &base64::engine::general_purpose::STANDARD);
         let mut buf = Vec::new();
         decoder.read_to_end(&mut buf)?;
         Ok(buf)

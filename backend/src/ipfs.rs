@@ -3,6 +3,9 @@ use ipfs_api_backend_hyper::{IpfsApi, IpfsClient as HyperIpfsClient, TryFromUri}
 use serde_json::Value;
 use std::io::Cursor;
 
+// Add required import for map_ok
+use futures_util::TryStreamExt;
+
 pub struct IpfsClient {
     client: HyperIpfsClient,
     gateway: String,
@@ -35,12 +38,12 @@ impl IpfsClient {
 
     /// Upload file to IPFS
     pub async fn add_file(&self, path: &std::path::Path) -> Result<String> {
-        let file = tokio::fs::File::open(path).await?;
-        let reader = tokio::io::BufReader::new(file);
+        let file_data = tokio::fs::read(path).await
+            .context("Failed to read file")?;
 
         let response = self
             .client
-            .add(reader)
+            .add(std::io::Cursor::new(file_data))
             .await
             .context("Failed to add file to IPFS")?;
 

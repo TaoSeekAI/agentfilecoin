@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 # Ethereum / Web3
-alloy = { version = "0.7", features = ["full"] }
+alloy = { version = "1.0", features = ["full"] }
 ethers = "2.0"
 
 # IPFS
@@ -19,6 +19,7 @@ lighthouse-client = "0.1"
 # Async runtime
 tokio = { version = "1.35", features = ["full"] }
 async-trait = "0.1"
+futures-util = "0.3"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -49,14 +50,13 @@ dirs = "5.0"
 chrono = "0.4"
 
 # MCP Protocol
-mcp-client = { git = "https://github.com/modelcontextprotocol/rust-sdk", optional = true }
+# mcp-client = { git = "https://github.com/modelcontextprotocol/rust-sdk", optional = true }
 
 [dev-dependencies]
 tokio-test = "0.4"
 
 [features]
 default = []
-mcp = ["mcp-client"]
 
 [[bin]]
 name = "agent-cli"

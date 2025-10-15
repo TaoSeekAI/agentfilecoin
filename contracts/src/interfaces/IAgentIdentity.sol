@@ -35,7 +35,7 @@ interface IAgentIdentity {
      * @param metadataURI IPFS or HTTPS URI pointing to agent metadata JSON
      * @return agentId Unique identifier for the registered agent
      */
-    function register(string calldata metadataURI) external returns (uint256 agentId);
+    function register(string calldata metadataURI) external payable returns (uint256 agentId);
 
     /**
      * @notice Update agent metadata URI
@@ -95,4 +95,11 @@ interface IAgentIdentity {
      * @return Global identifier in format: eip155:chainId:contractAddress:tokenId
      */
     function getGlobalIdentifier(uint256 agentId) external view returns (string memory);
+
+    /**
+     * @notice Returns the owner of the agent.
+     * @param agentId The identifier for an agent.
+     * @return The owner of the agent.
+     */
+    function ownerOf(uint256 agentId) external view returns (address);
 }

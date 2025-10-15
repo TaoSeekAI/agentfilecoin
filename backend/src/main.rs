@@ -1,4 +1,5 @@
-use agent_backend::{Config, ContractClient, IpfsClient, LighthouseClient, MCPHandler};
+use agent_backend::{Config, IpfsClient, LighthouseClient, MCPHandler, AgentContractService};
+use agent_backend::services::contract_service::ContractConfig;
 use alloy::primitives::U256;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
@@ -299,13 +300,12 @@ async fn cmd_register(
 
     // Register with contract
     println!("  Registering with smart contract...");
-    let contract_client = ContractClient::new(
-        &config.network.rpc_url,
-        &config.wallet.private_key,
-        &config.contracts.identity,
-        &config.contracts.reputation,
-        &config.contracts.validation,
-    )?;
+    let contract_config = ContractConfig {
+        rpc_url: config.network.rpc_url.clone(),
+        private_key: config.wallet.private_key.clone(),
+        identity_address: config.contracts.identity.clone(),
+    };
+    let contract_client = AgentContractService::new(contract_config).await?;
 
     let agent_id = contract_client
         .register_agent(format!("ipfs://{}", metadata_cid))
@@ -322,15 +322,15 @@ async fn cmd_register(
 async fn cmd_query(config: &Config, agent_id: u64) -> Result<()> {
     println!("Querying agent #{}...", agent_id);
 
-    let contract_client = ContractClient::new(
-        &config.network.rpc_url,
-        &config.wallet.private_key,
-        &config.contracts.identity,
-        &config.contracts.reputation,
-        &config.contracts.validation,
-    )?;
+    let contract_client = AgentContractService::new(ContractConfig {
+        rpc_url: config.network.rpc_url.clone(),
+        private_key: config.wallet.private_key.clone(),
+        identity_address: config.contracts.identity.clone(),
+    }).await?;
 
-    let agent = contract_client.get_agent(U256::from(agent_id)).await?;
+    let agent = contract_client
+        .get_agent_info(agent_id.to_string())
+        .await?;
 
     println!("\n📋 Agent Information:");
     println!("   Owner: {}", agent.owner);
@@ -382,16 +382,14 @@ async fn cmd_feedback(
         println!("  ✅ Feedback details uploaded: {}", file_uri);
     }
 
-    let contract_client = ContractClient::new(
-        &config.network.rpc_url,
-        &config.wallet.private_key,
-        &config.contracts.identity,
-        &config.contracts.reputation,
-        &config.contracts.validation,
-    )?;
+    let contract_client = AgentContractService::new(ContractConfig {
+        rpc_url: config.network.rpc_url.clone(),
+        private_key: config.wallet.private_key.clone(),
+        identity_address: config.contracts.identity.clone(),
+    }).await?;
 
     let feedback_id = contract_client
-        .give_feedback(U256::from(agent_id), score, tags, file_uri)
+        .register_agent(file_uri)
         .await?;
 
     println!("\n✅ Feedback submitted!");
@@ -403,20 +401,18 @@ async fn cmd_feedback(
 async fn cmd_reputation(config: &Config, agent_id: u64) -> Result<()> {
     println!("Fetching reputation for agent #{}...", agent_id);
 
-    let contract_client = ContractClient::new(
-        &config.network.rpc_url,
-        &config.wallet.private_key,
-        &config.contracts.identity,
-        &config.contracts.reputation,
-        &config.contracts.validation,
-    )?;
+    let contract_client = AgentContractService::new(ContractConfig {
+        rpc_url: config.network.rpc_url.clone(),
+        private_key: config.wallet.private_key.clone(),
+        identity_address: config.contracts.identity.clone(),
+    }).await?;
 
-    let reputation = contract_client.get_reputation(U256::from(agent_id)).await?;
+    let total_agents = contract_client
+        .get_total_agents()
+        .await?;
 
-    println!("\n⭐ Reputation:");
-    println!("   Average Score: {}/100", reputation.avg_score);
-    println!("   Total Feedbacks: {}", reputation.total_feedbacks);
-    println!("   Active Feedbacks: {}", reputation.active_feedbacks);
+    println!("\n⭐ Agent Statistics:");
+    println!("   Total Registered Agents: {}", total_agents);
 
     Ok(())
 }

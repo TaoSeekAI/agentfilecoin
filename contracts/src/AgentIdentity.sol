@@ -1,143 +1,109 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import "../lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "../lib/openzeppelin-contracts/contracts/utils/Counters.sol";
+import "../lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IAgentIdentity.sol";
 
 /**
  * @title AgentIdentity
- * @notice ERC-8004 compliant Agent Identity Registry
- * @dev Implements agent registration as ERC-721-like tokens without full ERC-721 compliance
+ * @notice ERC-8004 compliant Agent Identity Registry, refactored based on ChaosChain guide.
+ * @dev Inherits from OpenZeppelin's ERC721 standards for security and compatibility.
  */
-contract AgentIdentity is IAgentIdentity {
-    struct Agent {
-        address owner;
-        string metadataURI;
-        uint256 registeredAt;
-        bool isActive;
-    }
+contract AgentIdentity is IAgentIdentity, ERC721URIStorage, ReentrancyGuard {
+    using Counters for Counters.Counter;
+    Counters.Counter private _agentIdCounter;
 
-    /// @notice Mapping from agent ID to agent data
-    mapping(uint256 => Agent) private _agents;
+    // Mapping to store registration timestamp, as it's not part of the standard ERC721
+    mapping(uint256 => uint256) private _registrationTimestamps;
+    // Mapping to store active status
+    mapping(uint256 => bool) private _agentStatus;
 
-    /// @notice Mapping from owner to list of owned agent IDs
-    mapping(address => uint256[]) private _ownedAgents;
-
-    /// @notice Current agent counter
-    uint256 private _agentCounter;
-
-    /// @notice Registration fee (can be 0)
     uint256 public registrationFee;
-
-    /// @notice Contract owner
-    address public owner;
+    address public contractOwner;
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Not contract owner");
+        require(msg.sender == contractOwner, "Not contract owner");
         _;
     }
 
-    modifier onlyAgentOwner(uint256 agentId) {
-        require(_agents[agentId].owner == msg.sender, "Not agent owner");
-        _;
-    }
-
-    modifier agentExists(uint256 agentId) {
-        require(_agents[agentId].owner != address(0), "Agent does not exist");
-        _;
-    }
-
-    constructor(uint256 _registrationFee) {
-        owner = msg.sender;
+    constructor(uint256 _registrationFee) ERC721("ERC-8004 Trustless Agent", "AGENT") {
+        contractOwner = msg.sender;
         registrationFee = _registrationFee;
     }
 
-    /// @inheritdoc IAgentIdentity
-    function register(string calldata metadataURI) external payable returns (uint256 agentId) {
+    // --- ERC-8004 Functions ---
+
+    function register(string calldata metadataURI) external payable nonReentrant returns (uint256 agentId) {
         require(bytes(metadataURI).length > 0, "Empty metadata URI");
         require(msg.value >= registrationFee, "Insufficient registration fee");
 
-        _agentCounter++;
-        agentId = _agentCounter;
+        _agentIdCounter.increment();
+        agentId = _agentIdCounter.current();
 
-        _agents[agentId] = Agent({
-            owner: msg.sender,
-            metadataURI: metadataURI,
-            registeredAt: block.timestamp,
-            isActive: true
-        });
-
-        _ownedAgents[msg.sender].push(agentId);
+        _safeMint(msg.sender, agentId);
+        _setTokenURI(agentId, metadataURI);
+        _registrationTimestamps[agentId] = block.timestamp;
+        _agentStatus[agentId] = true;
 
         emit AgentRegistered(agentId, msg.sender, metadataURI, block.timestamp);
 
-        // Refund excess payment
         if (msg.value > registrationFee) {
-            payable(msg.sender).transfer(msg.value - registrationFee);
+            (bool success, ) = msg.sender.call{value: msg.value - registrationFee}("");
+            require(success, "Refund failed");
         }
     }
 
-    /// @inheritdoc IAgentIdentity
-    function updateURI(uint256 agentId, string calldata metadataURI)
-        external
-        agentExists(agentId)
-        onlyAgentOwner(agentId)
-    {
+    function updateURI(uint256 agentId, string calldata metadataURI) external {
+        require(_isApprovedOrOwner(msg.sender, agentId), "Not authorized");
         require(bytes(metadataURI).length > 0, "Empty metadata URI");
 
-        string memory oldURI = _agents[agentId].metadataURI;
-        _agents[agentId].metadataURI = metadataURI;
+        string memory oldURI = tokenURI(agentId);
+        _setTokenURI(agentId, metadataURI);
 
         emit AgentURIUpdated(agentId, oldURI, metadataURI, block.timestamp);
     }
 
-    /// @inheritdoc IAgentIdentity
-    function setAgentStatus(uint256 agentId, bool isActive)
-        external
-        agentExists(agentId)
-        onlyAgentOwner(agentId)
-    {
-        _agents[agentId].isActive = isActive;
+    function setAgentStatus(uint256 agentId, bool isActive) external {
+        require(_isApprovedOrOwner(msg.sender, agentId), "Not authorized");
+        _agentStatus[agentId] = isActive;
         emit AgentStatusChanged(agentId, isActive, block.timestamp);
     }
 
-    /// @inheritdoc IAgentIdentity
-    function getAgentURI(uint256 agentId)
-        external
-        view
-        agentExists(agentId)
-        returns (string memory)
-    {
-        return _agents[agentId].metadataURI;
+    function getAgentURI(uint256 agentId) external view returns (string memory) {
+        require(_exists(agentId), "Agent does not exist");
+        return tokenURI(agentId);
     }
 
-    /// @inheritdoc IAgentIdentity
     function getAgent(uint256 agentId)
         external
         view
-        agentExists(agentId)
-        returns (address, string memory, uint256, bool)
+        returns (
+            address agentOwner,
+            string memory metadataURI,
+            uint256 registeredAt,
+            bool isActive
+        )
     {
-        Agent memory agent = _agents[agentId];
-        return (agent.owner, agent.metadataURI, agent.registeredAt, agent.isActive);
+        require(_exists(agentId), "Agent does not exist");
+        agentOwner = ownerOf(agentId);
+        metadataURI = tokenURI(agentId);
+        registeredAt = _registrationTimestamps[agentId];
+        isActive = _agentStatus[agentId];
     }
 
-    /// @inheritdoc IAgentIdentity
-    function isAgentActive(uint256 agentId) external view agentExists(agentId) returns (bool) {
-        return _agents[agentId].isActive;
+    function isAgentActive(uint256 agentId) external view returns (bool) {
+        require(_exists(agentId), "Agent does not exist");
+        return _agentStatus[agentId];
     }
 
-    /// @inheritdoc IAgentIdentity
     function totalAgents() external view returns (uint256) {
-        return _agentCounter;
+        return _agentIdCounter.current();
     }
 
-    /// @inheritdoc IAgentIdentity
-    function getGlobalIdentifier(uint256 agentId)
-        external
-        view
-        agentExists(agentId)
-        returns (string memory)
-    {
+    function getGlobalIdentifier(uint256 agentId) external view returns (string memory) {
+        require(_exists(agentId), "Agent does not exist");
         return string(
             abi.encodePacked(
                 "eip155:",
@@ -150,33 +116,49 @@ contract AgentIdentity is IAgentIdentity {
         );
     }
 
-    /**
-     * @notice Get agents owned by address
-     * @param ownerAddress Address to query
-     * @return Array of agent IDs
-     */
-    function getOwnedAgents(address ownerAddress) external view returns (uint256[] memory) {
-        return _ownedAgents[ownerAddress];
-    }
+    // --- Owner Functions ---
 
-    /**
-     * @notice Update registration fee
-     * @param newFee New registration fee
-     */
     function setRegistrationFee(uint256 newFee) external onlyOwner {
         registrationFee = newFee;
     }
 
-    /**
-     * @notice Withdraw collected fees
-     */
     function withdrawFees() external onlyOwner {
         uint256 balance = address(this).balance;
         require(balance > 0, "No fees to withdraw");
-        payable(owner).transfer(balance);
+        (bool success, ) = payable(contractOwner).call{value: balance}("");
+        require(success, "Transfer failed");
     }
 
-    // Helper functions
+    // --- Overrides ---
+
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        override(ERC721, ERC721URIStorage)
+        returns (address)
+    {
+        return super._update(to, tokenId, auth);
+    }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+    
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+
+    // --- Internal Helpers (copied from original contract for getGlobalIdentifier) ---
+    
     function _toString(uint256 value) private pure returns (string memory) {
         if (value == 0) {
             return "0";

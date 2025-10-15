@@ -6,10 +6,11 @@ import "./interfaces/IAgentIdentity.sol";
 
 /**
  * @title AgentValidation
- * @notice ERC-8004 compliant Agent Validation Registry
- * @dev Manages validation requests and responses for agent work
+ * @notice ERC-8004 compliant Agent Validation Registry, refactored with security enhancements.
+ * @dev Manages validation requests and responses for agent work.
  */
 contract AgentValidation is IAgentValidation {
+
     struct ValidationRequest {
         uint256 agentId;
         address requester;
@@ -22,29 +23,23 @@ contract AgentValidation is IAgentValidation {
         uint256 completedAt;
     }
 
-    /// @notice Reference to identity registry
     IAgentIdentity public identityRegistry;
 
-    /// @notice Mapping from request ID to validation request
-    mapping(uint256 => ValidationRequest) private _validationRequests;
+    // --- SECURITY: Use request hash as the unique ID to prevent overwrites ---
+    mapping(bytes32 => ValidationRequest) private _validationRequests;
+    mapping(bytes32 => bool) private _requestExists;
+    // ---
 
-    /// @notice Mapping from agent ID to validation request IDs
-    mapping(uint256 => uint256[]) private _agentValidations;
-
-    /// @notice Current request counter
-    uint256 private _requestCounter;
-
-    /// @notice Validation expiry time (7 days)
+    mapping(uint256 => bytes32[]) private _agentValidations;
     uint256 public constant VALIDATION_EXPIRY = 7 days;
 
     modifier agentExists(uint256 agentId) {
-        (address agentOwner,,,) = identityRegistry.getAgent(agentId);
-        require(agentOwner != address(0), "Agent does not exist");
+        require(identityRegistry.ownerOf(agentId) != address(0), "Agent does not exist");
         _;
     }
 
-    modifier requestExists(uint256 requestId) {
-        require(_validationRequests[requestId].requester != address(0), "Request does not exist");
+    modifier requestExists(bytes32 requestHash) {
+        require(_requestExists[requestHash], "Request does not exist");
         _;
     }
 
@@ -53,19 +48,28 @@ contract AgentValidation is IAgentValidation {
         identityRegistry = IAgentIdentity(_identityRegistry);
     }
 
-    /// @inheritdoc IAgentValidation
-    function requestValidation(uint256 agentId, string calldata workURI, address validator)
-        external
-        agentExists(agentId)
-        returns (uint256 requestId)
-    {
+    function requestValidation(
+        uint256 agentId,
+        string calldata workURI,
+        address validator
+    ) external agentExists(agentId) returns (bytes32 requestHash) {
         require(validator != address(0), "Invalid validator address");
         require(bytes(workURI).length > 0, "Empty work URI");
 
-        _requestCounter++;
-        requestId = _requestCounter;
+        // --- SECURITY: Prevent self-validation ---
+        address agentOwner = identityRegistry.ownerOf(agentId);
+        require(validator != agentOwner, "Self-validation not allowed");
+        require(validator != msg.sender, "Self-validation not allowed");
+        // ---
 
-        _validationRequests[requestId] = ValidationRequest({
+        requestHash = keccak256(abi.encode(agentId, workURI, validator, msg.sender, block.chainid));
+
+        // --- SECURITY: Prevent request hash overwrites ---
+        require(!_requestExists[requestHash], "Request hash already exists");
+        _requestExists[requestHash] = true;
+        // ---
+
+        _validationRequests[requestHash] = ValidationRequest({
             agentId: agentId,
             requester: msg.sender,
             validator: validator,
@@ -77,24 +81,20 @@ contract AgentValidation is IAgentValidation {
             completedAt: 0
         });
 
-        _agentValidations[agentId].push(requestId);
+        _agentValidations[agentId].push(requestHash);
 
-        emit ValidationRequested(requestId, agentId, msg.sender, validator, workURI, block.timestamp);
+        emit ValidationRequested(requestHash, agentId, msg.sender, validator, workURI, block.timestamp);
     }
 
-    /// @inheritdoc IAgentValidation
-    function submitValidation(uint256 requestId, bool isValid, string calldata proofURI)
+    function submitValidation(bytes32 requestHash, bool isValid, string calldata proofURI)
         external
-        requestExists(requestId)
+        requestExists(requestHash)
     {
-        ValidationRequest storage request = _validationRequests[requestId];
+        ValidationRequest storage request = _validationRequests[requestHash];
 
         require(msg.sender == request.validator, "Not the assigned validator");
         require(request.status == ValidationStatus.Pending, "Request not pending");
-        require(
-            block.timestamp <= request.requestedAt + VALIDATION_EXPIRY,
-            "Validation expired"
-        );
+        require(block.timestamp <= request.requestedAt + VALIDATION_EXPIRY, "Validation expired");
 
         request.status = ValidationStatus.Completed;
         request.isValid = isValid;
@@ -102,33 +102,28 @@ contract AgentValidation is IAgentValidation {
         request.completedAt = block.timestamp;
 
         emit ValidationSubmitted(
-            requestId, request.agentId, msg.sender, isValid, proofURI, block.timestamp
+            requestHash, request.agentId, msg.sender, isValid, proofURI, block.timestamp
         );
     }
 
-    /// @inheritdoc IAgentValidation
-    function expireValidation(uint256 requestId) external requestExists(requestId) {
-        ValidationRequest storage request = _validationRequests[requestId];
+    function expireValidation(bytes32 requestHash) external requestExists(requestHash) {
+        ValidationRequest storage request = _validationRequests[requestHash];
 
         require(request.status == ValidationStatus.Pending, "Request not pending");
-        require(
-            block.timestamp > request.requestedAt + VALIDATION_EXPIRY,
-            "Validation not yet expired"
-        );
+        require(block.timestamp > request.requestedAt + VALIDATION_EXPIRY, "Validation not yet expired");
 
         request.status = ValidationStatus.Expired;
 
-        emit ValidationExpired(requestId, block.timestamp);
+        emit ValidationExpired(requestHash, block.timestamp);
     }
 
-    /// @inheritdoc IAgentValidation
-    function getValidationRequest(uint256 requestId)
+    function getValidationRequest(bytes32 requestHash)
         external
         view
-        requestExists(requestId)
+        requestExists(requestHash)
         returns (uint256, address, address, string memory, ValidationStatus, bool, string memory, uint256, uint256)
     {
-        ValidationRequest storage request = _validationRequests[requestId];
+        ValidationRequest storage request = _validationRequests[requestHash];
         return (
             request.agentId,
             request.requester,
@@ -142,39 +137,36 @@ contract AgentValidation is IAgentValidation {
         );
     }
 
-    /// @inheritdoc IAgentValidation
-    function getValidationStatus(uint256 requestId)
+    function getValidationStatus(bytes32 requestHash)
         external
         view
-        requestExists(requestId)
+        requestExists(requestHash)
         returns (ValidationStatus, bool)
     {
-        ValidationRequest storage request = _validationRequests[requestId];
+        ValidationRequest storage request = _validationRequests[requestHash];
         return (request.status, request.isValid);
     }
 
-    /// @inheritdoc IAgentValidation
     function getAgentValidations(uint256 agentId)
         external
         view
         agentExists(agentId)
-        returns (uint256[] memory)
+        returns (bytes32[] memory)
     {
         return _agentValidations[agentId];
     }
 
-    /// @inheritdoc IAgentValidation
     function getValidationStats(uint256 agentId)
         external
         view
         agentExists(agentId)
         returns (uint256 totalValidations, uint256 passedValidations, uint256 failedValidations, uint256 pendingValidations)
     {
-        uint256[] memory validationIds = _agentValidations[agentId];
-        totalValidations = validationIds.length;
+        bytes32[] memory validationHashes = _agentValidations[agentId];
+        totalValidations = validationHashes.length;
 
         for (uint256 i = 0; i < totalValidations; i++) {
-            ValidationRequest storage request = _validationRequests[validationIds[i]];
+            ValidationRequest storage request = _validationRequests[validationHashes[i]];
 
             if (request.status == ValidationStatus.Pending) {
                 pendingValidations++;
@@ -188,13 +180,8 @@ contract AgentValidation is IAgentValidation {
         }
     }
 
-    /**
-     * @notice Check if validation has expired
-     * @param requestId Request identifier
-     * @return Has expired
-     */
-    function isExpired(uint256 requestId) external view requestExists(requestId) returns (bool) {
-        ValidationRequest storage request = _validationRequests[requestId];
+    function isExpired(bytes32 requestHash) external view requestExists(requestHash) returns (bool) {
+        ValidationRequest storage request = _validationRequests[requestHash];
         return request.status == ValidationStatus.Pending
             && block.timestamp > request.requestedAt + VALIDATION_EXPIRY;
     }

@@ -16,7 +16,7 @@ interface IAgentValidation {
 
     /// @notice Emitted when validation is requested
     event ValidationRequested(
-        uint256 indexed requestId,
+        bytes32 indexed requestHash,
         uint256 indexed agentId,
         address indexed requester,
         address validator,
@@ -26,7 +26,7 @@ interface IAgentValidation {
 
     /// @notice Emitted when validation is submitted
     event ValidationSubmitted(
-        uint256 indexed requestId,
+        bytes32 indexed requestHash,
         uint256 indexed agentId,
         address indexed validator,
         bool isValid,
@@ -35,42 +35,42 @@ interface IAgentValidation {
     );
 
     /// @notice Emitted when validation expires
-    event ValidationExpired(uint256 indexed requestId, uint256 timestamp);
+    event ValidationExpired(bytes32 indexed requestHash, uint256 timestamp);
 
     /**
      * @notice Request validation for agent's work
      * @param agentId Agent identifier
      * @param workURI IPFS URI pointing to work to be validated
      * @param validator Address of validator
-     * @return requestId Unique validation request identifier
+     * @return requestHash Unique validation request identifier
      */
     function requestValidation(
         uint256 agentId,
         string calldata workURI,
         address validator
-    ) external returns (uint256 requestId);
+    ) external returns (bytes32 requestHash);
 
     /**
      * @notice Submit validation result
-     * @param requestId Validation request identifier
+     * @param requestHash Validation request identifier
      * @param isValid Validation result
      * @param proofURI IPFS URI pointing to validation proof
      */
     function submitValidation(
-        uint256 requestId,
+        bytes32 requestHash,
         bool isValid,
         string calldata proofURI
     ) external;
 
     /**
      * @notice Mark validation as expired
-     * @param requestId Validation request identifier
+     * @param requestHash Validation request identifier
      */
-    function expireValidation(uint256 requestId) external;
+    function expireValidation(bytes32 requestHash) external;
 
     /**
      * @notice Get validation request details
-     * @param requestId Validation request identifier
+     * @param requestHash Validation request identifier
      * @return agentId Agent identifier
      * @return requester Address of requester
      * @return validator Address of validator
@@ -81,7 +81,7 @@ interface IAgentValidation {
      * @return requestedAt Request timestamp
      * @return completedAt Completion timestamp
      */
-    function getValidationRequest(uint256 requestId)
+    function getValidationRequest(bytes32 requestHash)
         external
         view
         returns (
@@ -98,11 +98,11 @@ interface IAgentValidation {
 
     /**
      * @notice Get validation status
-     * @param requestId Validation request identifier
+     * @param requestHash Validation request identifier
      * @return status Validation status
      * @return isValid Validation result
      */
-    function getValidationStatus(uint256 requestId)
+    function getValidationStatus(bytes32 requestHash)
         external
         view
         returns (ValidationStatus status, bool isValid);
@@ -110,9 +110,9 @@ interface IAgentValidation {
     /**
      * @notice Get all validation requests for an agent
      * @param agentId Agent identifier
-     * @return Array of validation request IDs
+     * @return Array of validation request hashes
      */
-    function getAgentValidations(uint256 agentId) external view returns (uint256[] memory);
+    function getAgentValidations(uint256 agentId) external view returns (bytes32[] memory);
 
     /**
      * @notice Get validation statistics for an agent
