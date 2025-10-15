@@ -37,8 +37,9 @@ const CONFIG = {
     name: process.env.FILECOIN_NETWORK_NAME || 'Filecoin Calibration'
   },
 
-  // Private key (used on validation network)
-  privateKey: process.env.PRIVATE_KEY,
+  // Private keys
+  privateKey: process.env.PRIVATE_KEY, // Agent owner wallet
+  validatorPrivateKey: process.env.VALIDATOR_PRIVATE_KEY, // Validator wallet
 
   // Contract addresses (on validation network)
   identityContract: process.env.AGENT_IDENTITY_ADDRESS,
@@ -108,7 +109,7 @@ function validateConfig() {
 }
 
 /**
- * Initialize ethers providers and signer
+ * Initialize ethers providers and signers
  */
 function initializeEthers() {
   console.log('\n🔐 Initializing Ethers...');
@@ -117,13 +118,22 @@ function initializeEthers() {
   const nftProvider = new ethers.JsonRpcProvider(CONFIG.nftNetwork.rpcUrl);
   console.log(`✅ NFT Provider: ${CONFIG.nftNetwork.name}`);
 
-  // Validation Network provider and signer (for ERC-8004 transactions)
+  // Validation Network provider and signers
   const validationProvider = new ethers.JsonRpcProvider(CONFIG.validationNetwork.rpcUrl);
+
+  // Agent owner signer (for agent registration and requests)
   const signer = new ethers.Wallet(CONFIG.privateKey, validationProvider);
   console.log(`✅ Validation Provider: ${CONFIG.validationNetwork.name}`);
-  console.log(`✅ Wallet: ${signer.address}`);
+  console.log(`✅ Agent Wallet: ${signer.address}`);
 
-  return { nftProvider, validationProvider, signer };
+  // Validator signer (for validation responses)
+  let validatorSigner = null;
+  if (CONFIG.validatorPrivateKey) {
+    validatorSigner = new ethers.Wallet(CONFIG.validatorPrivateKey, validationProvider);
+    console.log(`✅ Validator Wallet: ${validatorSigner.address}`);
+  }
+
+  return { nftProvider, validationProvider, signer, validatorSigner };
 }
 
 /**
@@ -157,7 +167,7 @@ async function main() {
   setupProxy();
   validateConfig();
 
-  const { nftProvider, validationProvider, signer } = initializeEthers();
+  const { nftProvider, validationProvider, signer, validatorSigner } = initializeEthers();
 
   try {
     // Check balance on validation network
@@ -287,13 +297,13 @@ async function main() {
 
     const taskURI = saveMetadata(taskMetadata, 'task-metadata.json');
 
-    // For MVP, use a different test address as validator (ERC-8004 doesn't allow self-validation)
-    // This is a well-known test address: Ethereum Foundation donation address
-    const validatorAddress = '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe';
+    // Use the validator wallet address (separate from agent owner)
+    const validatorAddress = validatorSigner.address;
 
-    console.log('\n⚠️  Note: Using test validator address for MVP');
+    console.log('\n✅ Using Real Validator Wallet');
     console.log(`   Validator: ${validatorAddress}`);
-    console.log('   In production, this would be a registered validator service\n');
+    console.log(`   Agent Owner: ${signer.address}`);
+    console.log('   ERC-8004 requires validator ≠ agent owner\n');
 
     const validationRequest = await erc8004Client.createValidationRequest(
       agentId,
@@ -340,22 +350,39 @@ async function main() {
 
     const proofURI = saveMetadata(proofMetadata, 'proof-metadata.json');
 
-    console.log('\n⚠️  MVP Note: Skipping validation response submission');
-    console.log('   Reason: Only the designated validator can submit validation responses');
-    console.log(`   Validator address: ${validatorAddress}`);
-    console.log('   In production: The validator would review proof and submit validation response');
     console.log('\n📊 Proof Generated:');
     console.log(`   Proof URI: ${proofURI}`);
     console.log(`   Migration Success: ${migrationResult.summary.successful}/${migrationResult.summary.total} CIDs`);
-    console.log(`   Ready for validator review`);
 
-    // For MVP, we'll simulate the validation submission object
-    const validationSubmission = {
+    // Create ERC-8004 client for validator
+    console.log('\n🔄 Validator Reviewing Proof...');
+    const validatorERC8004Client = new ERC8004OfficialClient(
+      validationProvider,
+      validatorSigner,
+      CONFIG.identityContract,
+      CONFIG.validationContract
+    );
+
+    // Determine validation result based on migration success
+    const isValid = migrationResult.summary.successful > 0;
+    const validationResponse = isValid ? 1 : 2; // 1 = Approved, 2 = Rejected
+
+    console.log(`   Validation Decision: ${isValid ? '✅ APPROVED' : '❌ REJECTED'}`);
+    console.log(`   Success Rate: ${migrationResult.summary.successRate.toFixed(1)}%`);
+    console.log(`   Submitting validation response...`);
+
+    // Submit validation response as validator
+    const validationSubmission = await validatorERC8004Client.submitValidationResponse(
       requestHash,
-      proofURI,
-      txHash: null, // Would be set by validator
-      note: 'Validation response requires validator signature'
-    };
+      isValid,
+      proofURI
+    );
+
+    console.log('\n📊 Validation Response Submitted:');
+    console.log(`   Request Hash: ${requestHash}`);
+    console.log(`   Response: ${isValid ? 'Approved' : 'Rejected'}`);
+    console.log(`   Proof URI: ${proofURI}`);
+    console.log(`   TX: ${validationSubmission.txHash}`);
 
     // ========================================================================
     // PHASE 7: Verify and Generate Final Report
@@ -376,10 +403,12 @@ async function main() {
     // Query validation request state (will be "pending" since validator hasn't responded)
     const finalValidationState = await erc8004Client.getValidationRequest(requestHash);
 
-    console.log('\n📊 Validation Request State:');
+    console.log('\n📊 Validation State:');
     console.log(`   Request Hash: ${requestHash}`);
-    console.log(`   Status: Pending (awaiting validator response)`);
+    console.log(`   Status: ${finalValidationState.status}`);
     console.log(`   Validator: ${validatorAddress}`);
+    console.log(`   Requester: ${finalValidationState.requester}`);
+    console.log(`   Agent ID: ${finalValidationState.agentId}`);
 
     // Generate final report
     const finalReport = {
@@ -411,12 +440,13 @@ async function main() {
       },
       validation: {
         requestHash,
-        status: 'Pending',
+        status: finalValidationState.status,
         validator: validatorAddress,
+        requester: finalValidationState.requester,
         taskURI: taskURI,
         proofURI: proofURI,
         requestTx: validationRequest.txHash,
-        note: 'Awaiting validator response (requires validator signature)'
+        responseTx: validationSubmission.txHash
       },
       nftScan: {
         contract: scanResult.contractInfo,
@@ -455,7 +485,7 @@ async function main() {
     console.log(`   Validation Network: ${CONFIG.validationNetwork.name} (Chain ID: ${CONFIG.validationNetwork.chainId})`);
     console.log(`   ERC-8004 Agent ID: ${agentId}`);
     console.log(`   Validation Request Hash: ${requestHash}`);
-    console.log(`   Validation Status: ⏳ Pending (awaiting validator)`);
+    console.log(`   Validation Status: ${finalValidationState.status === 'Approved' ? '✅' : finalValidationState.status === 'Rejected' ? '❌' : '⏳'} ${finalValidationState.status}`);
     console.log(`   NFT Contract: ${CONFIG.nftContract}`);
     console.log(`   Tokens Scanned: ${scanResult.scanResults.summary.total}`);
     console.log(`   Unique IPFS CIDs: ${uniqueCIDs.length}`);
@@ -469,6 +499,7 @@ async function main() {
     console.log('\n🔗 Transactions:');
     console.log(`   Agent Registration: ${agentRegistration.txHash}`);
     console.log(`   Validation Request: ${validationRequest.txHash}`);
+    console.log(`   Validation Response: ${validationSubmission.txHash}`);
 
     console.log('\n✅ All data saved to: ' + path.resolve(CONFIG.outputDir));
 

@@ -1,6 +1,6 @@
 {
   "title": "NFT IPFS to Filecoin Migration - Complete Report",
-  "timestamp": "2025-10-15T14:44:35.964Z",
+  "timestamp": "2025-10-15T15:11:27.014Z",
   "networks": {
     "nft": {
       "name": "Ethereum Mainnet",
@@ -19,20 +19,21 @@
     "nft": "0xED5AF388653567Af2F388E6224dC7C4b3241C544"
   },
   "agent": {
-    "id": 73,
+    "id": 75,
     "owner": "0x1D621356Bc9484F5e5858a00103338579Cba9613",
     "metadataURI": "file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/output/agent-metadata.json",
     "isActive": true,
-    "registrationTx": "0xb0631cfe373f903d08b924ffd0b32715f695673fc9439bbe2f7ff67e6a443d99"
+    "registrationTx": "0xdc844ae970dfaefa280bc43ba27911bd0ea9dfbf1675d163e25027e7afce5f8b"
   },
   "validation": {
-    "requestHash": "0x2199d57b795b11550316198b1dd72fd50e72867e1581a75b8019a07e7ecf4ddf",
-    "status": "Pending",
-    "validator": "0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe",
+    "requestHash": "0xaf227afc93326fe6361a7bd158138c39bd7175ec53dab1a5f5ed22c61fbad189",
+    "status": "Approved",
+    "validator": "0xf3E6B8c07d7369f78e85b1139C81B54710e57846",
+    "requester": "0xf3E6B8c07d7369f78e85b1139C81B54710e57846",
     "taskURI": "file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/output/task-metadata.json",
     "proofURI": "file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/output/proof-metadata.json",
-    "requestTx": "0x35b5b3c2af39251076a7c1f524051e57d4b458705fc6b3e8cedf453da8a27b24",
-    "note": "Awaiting validator response (requires validator signature)"
+    "requestTx": "0x7dde32d13af54cd929f1dfceadd75de2dbb2ea86f894861601068d04e8b50ed4",
+    "responseTx": "0xc6eccde7586a2b2f85ea7a310c743a2e7b0e5e2ef41e8a569f250aa467a56b43"
   },
   "nftScan": {
     "contract": {
