@@ -30,13 +30,6 @@ const CONFIG = {
     name: process.env.VALIDATION_NETWORK_NAME || 'Sepolia Testnet'
   },
 
-  // Filecoin Network (for IPFS to Filecoin storage via Synapse SDK)
-  filecoinNetwork: {
-    rpcUrl: process.env.FILECOIN_NETWORK_RPC_URL || 'https://api.calibration.node.glif.io/rpc/v1',
-    chainId: parseInt(process.env.FILECOIN_NETWORK_CHAIN_ID || '314159'),
-    name: process.env.FILECOIN_NETWORK_NAME || 'Filecoin Calibration'
-  },
-
   // Private key (used on validation network)
   privateKey: process.env.PRIVATE_KEY,
 
@@ -196,10 +189,10 @@ async function main() {
       CONFIG.ipfsGateway
     );
 
-    console.log(`📡 FilecoinUploader: Using Filecoin Calibration network`);
+    console.log(`📡 FilecoinUploader: Using ${CONFIG.validationNetwork.name} for Filecoin operations`);
     const filecoinUploader = new FilecoinUploader(
       CONFIG.privateKey,
-      CONFIG.filecoinNetwork.rpcUrl
+      CONFIG.validationNetwork.rpcUrl
     );
 
     console.log(`📡 ERC8004Client: Using ${CONFIG.validationNetwork.name} (Chain ID: ${CONFIG.validationNetwork.chainId})`);

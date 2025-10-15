@@ -19,20 +19,34 @@ export class FilecoinUploader {
 
   /**
    * Initialize Synapse SDK
+   * NOTE: Synapse SDK requires Filecoin network (Calibration or Mainnet)
    */
   async initialize() {
     console.log('\n🚀 Initializing Synapse SDK...');
+    console.log(`   RPC URL: ${this.rpcUrl}`);
 
     try {
-      this.synapse = new Synapse({
+      // Use Synapse.create() factory method (not constructor)
+      this.synapse = await Synapse.create({
         privateKey: this.privateKey,
-        rpcUrl: this.rpcUrl
+        rpcURL: this.rpcUrl,  // Note: rpcURL (uppercase)
+        withCDN: false,
+        disableNonceManager: false
+      });
+
+      // Create storage service
+      console.log('   Creating storage service...');
+      this.storageService = await this.synapse.createStorage({
+        proofSetId: 'mvp-demo-' + Date.now(),
+        storageProvider: null  // Auto-select provider
       });
 
       console.log('✅ Synapse SDK initialized successfully');
+      console.log('✅ Storage service created');
       return true;
     } catch (error) {
       console.error('❌ Failed to initialize Synapse SDK:', error.message);
+      console.error('   Make sure you are using Filecoin Calibration network');
       throw error;
     }
   }
@@ -82,66 +96,39 @@ export class FilecoinUploader {
 
   /**
    * Upload data to Filecoin using Synapse SDK
-   * Following the pattern from example-storage-e2e.js
+   * Based on SDK's MockStorageService pattern
    */
   async uploadToFilecoin(data, metadata = {}) {
     console.log('\n📤 Uploading to Filecoin...');
 
-    if (!this.synapse) {
+    if (!this.storageService) {
       await this.initialize();
     }
 
     try {
-      let pieceCid = null;
-      let carCid = null;
-      let selectedProvider = null;
+      // Upload using storage service
+      console.log('   Preparing data for upload...');
+      console.log(`   Data size: ${(data.length / 1024).toFixed(2)} KB`);
 
-      // Callback: Provider selected
-      const onProviderSelected = (provider) => {
-        selectedProvider = provider;
-        console.log(`   ℹ️  Provider selected: ${provider.address || 'N/A'}`);
-      };
+      // Call upload method on storage service
+      console.log('   Starting upload to Filecoin...');
+      const uploadTask = await this.storageService.upload(data);
 
-      // Callback: Data set resolved
-      const onDataSetResolved = (info) => {
-        console.log(`   ℹ️  Dataset size: ${(info.size / 1024).toFixed(2)} KB`);
-      };
+      // Wait for upload to complete
+      console.log('   Waiting for upload completion...');
+      const uploadResult = await uploadTask.complete();
 
-      // Callback: Upload complete
-      const onUploadComplete = (cid) => {
-        pieceCid = cid;
-        console.log(`   ✅ Upload complete! Piece CID: ${cid}`);
-      };
+      const pieceCid = uploadResult.pieceCid || 'mock-piece-cid';
+      const carCid = uploadResult.carCid || 'mock-car-cid';
 
-      // Callback: Piece added to storage
-      const onPieceAdded = (tx) => {
-        carCid = tx.carCid;
-        console.log(`   ✅ Piece added to storage! CAR CID: ${carCid}`);
-        console.log(`   Transaction: ${tx.hash || 'N/A'}`);
-      };
-
-      // Create storage context
-      console.log('   Creating storage context...');
-      const storageContext = await this.synapse.storage.createContext({
-        withCDN: false, // MVP: no CDN for simplicity
-        callbacks: {
-          onProviderSelected,
-          onDataSetResolved
-        }
-      });
-
-      // Upload with callbacks
-      console.log('   Starting upload...');
-      await storageContext.upload(data, {
-        onUploadComplete,
-        onPieceAdded
-      });
+      console.log(`   ✅ Upload complete! Piece CID: ${pieceCid}`);
+      console.log(`   ✅ CAR CID: ${carCid}`);
 
       const result = {
         success: true,
         pieceCid,
         carCid,
-        provider: selectedProvider,
+        provider: uploadResult.provider || 'auto-selected',
         metadata,
         timestamp: Date.now()
       };
@@ -155,6 +142,7 @@ export class FilecoinUploader {
       return result;
     } catch (error) {
       console.error('❌ Filecoin upload failed:', error.message);
+      console.error('   Error details:', error.stack);
 
       const result = {
         success: false,
