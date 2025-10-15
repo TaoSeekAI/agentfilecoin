@@ -1,0 +1,33 @@
+{
+  "name": "nft-ipfs-filecoin-mvp",
+  "version": "1.0.0",
+  "description": "MVP demo for NFT IPFS to Filecoin migration using ERC-8004 and Synapse SDK",
+  "main": "demo.js",
+  "type": "module",
+  "scripts": {
+    "demo": "node demo.js",
+    "test": "node demo.js --test-mode"
+  },
+  "keywords": [
+    "NFT",
+    "IPFS",
+    "Filecoin",
+    "ERC-8004",
+    "Synapse",
+    "AI Agent"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@filoz/synapse-sdk": "^0.1.0",
+    "ethers": "^6.9.0",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "prettier": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
