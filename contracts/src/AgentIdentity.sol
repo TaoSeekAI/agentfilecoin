@@ -2,8 +2,8 @@
 pragma solidity ^0.8.23;
 
 import "../lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "../lib/openzeppelin-contracts/contracts/utils/Counters.sol";
-import "../lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
+import "../lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import "../lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import "./interfaces/IAgentIdentity.sol";
 
 /**
@@ -12,8 +12,7 @@ import "./interfaces/IAgentIdentity.sol";
  * @dev Inherits from OpenZeppelin's ERC721 standards for security and compatibility.
  */
 contract AgentIdentity is IAgentIdentity, ERC721URIStorage, ReentrancyGuard {
-    using Counters for Counters.Counter;
-    Counters.Counter private _agentIdCounter;
+    uint256 private _nextAgentId = 1;
 
     // Mapping to store registration timestamp, as it's not part of the standard ERC721
     mapping(uint256 => uint256) private _registrationTimestamps;
@@ -39,8 +38,8 @@ contract AgentIdentity is IAgentIdentity, ERC721URIStorage, ReentrancyGuard {
         require(bytes(metadataURI).length > 0, "Empty metadata URI");
         require(msg.value >= registrationFee, "Insufficient registration fee");
 
-        _agentIdCounter.increment();
-        agentId = _agentIdCounter.current();
+        agentId = _nextAgentId++;
+
 
         _safeMint(msg.sender, agentId);
         _setTokenURI(agentId, metadataURI);
@@ -99,7 +98,7 @@ contract AgentIdentity is IAgentIdentity, ERC721URIStorage, ReentrancyGuard {
     }
 
     function totalAgents() external view returns (uint256) {
-        return _agentIdCounter.current();
+        return _nextAgentId - 1;
     }
 
     function getGlobalIdentifier(uint256 agentId) external view returns (string memory) {
@@ -131,34 +130,59 @@ contract AgentIdentity is IAgentIdentity, ERC721URIStorage, ReentrancyGuard {
 
     // --- Overrides ---
 
-    function _update(address to, uint256 tokenId, address auth)
-        internal
-        override(ERC721, ERC721URIStorage)
+    function ownerOf(uint256 tokenId)
+        public
+        view
+        override(ERC721, IAgentIdentity, IERC721)
         returns (address)
     {
-        return super._update(to, tokenId, auth);
+        return super.ownerOf(tokenId);
     }
 
     function tokenURI(uint256 tokenId)
         public
         view
-        override(ERC721, ERC721URIStorage)
+        override
         returns (string memory)
     {
         return super.tokenURI(tokenId);
     }
-    
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721URIStorage)
+        override
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
     }
 
-    // --- Internal Helpers (copied from original contract for getGlobalIdentifier) ---
-    
+    // --- Internal Helpers ---
+
+    /**
+     * @dev Check if a token exists (replaces deprecated _exists from OZ v4)
+     * @param tokenId The token ID to check
+     * @return bool True if the token exists
+     */
+    function _exists(uint256 tokenId) internal view returns (bool) {
+        try this.ownerOf(tokenId) returns (address) {
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Check if spender is owner or approved for tokenId (replaces deprecated _isApprovedOrOwner from OZ v4)
+     * @param spender Address to check
+     * @param tokenId Token ID to check
+     * @return bool True if spender is owner or approved
+     */
+    function _isApprovedOrOwner(address spender, uint256 tokenId) internal view returns (bool) {
+        address owner = ownerOf(tokenId);
+        return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
+    }
+
     function _toString(uint256 value) private pure returns (string memory) {
         if (value == 0) {
             return "0";

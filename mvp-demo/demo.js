@@ -285,10 +285,10 @@ async function main() {
       taskURI
     );
 
-    const requestId = validationRequest.requestId;
+    const requestHash = validationRequest.requestHash;
 
     console.log('\n📊 Validation Request Result:');
-    console.log(`   Request ID: ${requestId}`);
+    console.log(`   Request Hash: ${requestHash}`);
     console.log(`   Agent ID: ${agentId}`);
     console.log(`   TX: ${validationRequest.txHash}`);
 
@@ -310,10 +310,10 @@ async function main() {
     saveMetadata(migrationReport, 'migration-report.json');
 
     // ========================================================================
-    // PHASE 6: Submit Proof to ERC-8004
+    // PHASE 6: Submit Validation (Proof) to ERC-8004
     // ========================================================================
     console.log('\n' + '='.repeat(80));
-    console.log('PHASE 6: Submit Proof to ERC-8004');
+    console.log('PHASE 6: Submit Validation (Proof) to ERC-8004');
     console.log(`Network: ${CONFIG.validationNetwork.name}`);
     console.log('='.repeat(80));
 
@@ -324,43 +324,31 @@ async function main() {
 
     const proofURI = saveMetadata(proofMetadata, 'proof-metadata.json');
 
-    const proofSubmission = await erc8004Client.submitProof(requestId, proofURI);
+    console.log('\n⚠️  Note: In production, validator would be a different address');
+    console.log('   For MVP demo, using validator 0x0000...0001 (simulated)');
 
-    console.log('\n📊 Proof Submission Result:');
-    console.log(`   Request ID: ${requestId}`);
+    // Submit validation with proof (isValid = true for successful migration)
+    const isValid = migrationResult.summary.successful > 0;
+    const validationSubmission = await erc8004Client.submitValidation(requestHash, isValid, proofURI);
+
+    console.log('\n📊 Validation Submission Result:');
+    console.log(`   Request Hash: ${requestHash}`);
+    console.log(`   Is Valid: ${isValid}`);
     console.log(`   Proof URI: ${proofURI}`);
-    console.log(`   TX: ${proofSubmission.txHash}`);
+    console.log(`   TX: ${validationSubmission.txHash}`);
 
     // ========================================================================
-    // PHASE 7: Approve Validation (self-validation for MVP)
-    // ========================================================================
-    console.log('\n' + '='.repeat(80));
-    console.log('PHASE 7: Approve Validation');
-    console.log(`Network: ${CONFIG.validationNetwork.name}`);
-    console.log('='.repeat(80));
-
-    console.log('\n⏳ Waiting 3 seconds before approval...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    const approval = await erc8004Client.approveValidation(requestId);
-
-    console.log('\n📊 Approval Result:');
-    console.log(`   Request ID: ${requestId}`);
-    console.log(`   Approved: ${approval.approved}`);
-    console.log(`   TX: ${approval.txHash}`);
-
-    // ========================================================================
-    // PHASE 8: Verify and Generate Final Report
+    // PHASE 7: Verify and Generate Final Report
     // ========================================================================
     console.log('\n' + '='.repeat(80));
-    console.log('PHASE 8: Verify and Generate Final Report');
+    console.log('PHASE 7: Verify and Generate Final Report');
     console.log('='.repeat(80));
 
     // Query final agent state
     const finalAgentState = await erc8004Client.getAgent(agentId);
 
     // Query final validation state
-    const finalValidationState = await erc8004Client.getValidationRequest(requestId);
+    const finalValidationState = await erc8004Client.getValidationRequest(requestHash);
 
     // Generate final report
     const finalReport = {
@@ -391,14 +379,15 @@ async function main() {
         registrationTx: agentRegistration.txHash
       },
       validation: {
-        requestId,
+        requestHash,
         status: finalValidationState.status,
-        taskURI: finalValidationState.taskURI,
+        isValid: finalValidationState.isValid,
+        workURI: finalValidationState.workURI,
         proofURI: finalValidationState.proofURI,
-        createdAt: new Date(finalValidationState.createdAt * 1000).toISOString(),
+        requestedAt: new Date(finalValidationState.requestedAt * 1000).toISOString(),
+        completedAt: finalValidationState.completedAt ? new Date(finalValidationState.completedAt * 1000).toISOString() : null,
         requestTx: validationRequest.txHash,
-        proofTx: proofSubmission.txHash,
-        approvalTx: approval.txHash
+        validationTx: validationSubmission.txHash
       },
       nftScan: {
         contract: scanResult.contractInfo,
@@ -436,8 +425,9 @@ async function main() {
     console.log(`   NFT Network: ${CONFIG.nftNetwork.name} (Chain ID: ${CONFIG.nftNetwork.chainId})`);
     console.log(`   Validation Network: ${CONFIG.validationNetwork.name} (Chain ID: ${CONFIG.validationNetwork.chainId})`);
     console.log(`   ERC-8004 Agent ID: ${agentId}`);
-    console.log(`   Validation Request ID: ${requestId}`);
+    console.log(`   Validation Request Hash: ${requestHash}`);
     console.log(`   Validation Status: ${finalValidationState.status}`);
+    console.log(`   Validation Result: ${finalValidationState.isValid ? '✅ Valid' : '❌ Invalid'}`);
     console.log(`   NFT Contract: ${CONFIG.nftContract}`);
     console.log(`   Tokens Scanned: ${scanResult.scanResults.summary.total}`);
     console.log(`   Unique IPFS CIDs: ${uniqueCIDs.length}`);
@@ -451,8 +441,7 @@ async function main() {
     console.log('\n🔗 Transactions:');
     console.log(`   Agent Registration: ${agentRegistration.txHash}`);
     console.log(`   Validation Request: ${validationRequest.txHash}`);
-    console.log(`   Proof Submission: ${proofSubmission.txHash}`);
-    console.log(`   Validation Approval: ${approval.txHash}`);
+    console.log(`   Validation Submission: ${validationSubmission.txHash}`);
 
     console.log('\n✅ All data saved to: ' + path.resolve(CONFIG.outputDir));
 

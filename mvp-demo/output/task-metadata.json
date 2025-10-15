@@ -1,0 +1,14 @@
+{
+  "task": "NFT IPFS to Filecoin Migration",
+  "description": "Migrate 2 IPFS CIDs from NFT project to Filecoin",
+  "nftContract": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+  "tokenRange": {
+    "start": 0,
+    "end": 4
+  },
+  "ipfsCids": [
+    "QmZcH4YvBVVRJtdn4RdbaqgspFU8gH6P9vomDpBVpAL3u4",
+    "QmYDvPAXtiJg7s8JdRBSLWdgSphQdac8j1YuQNNxcGE1hg"
+  ],
+  "timestamp": "2025-10-15T14:11:31.213Z"
+}

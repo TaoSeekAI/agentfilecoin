@@ -97,9 +97,9 @@ interface IAgentIdentity {
     function getGlobalIdentifier(uint256 agentId) external view returns (string memory);
 
     /**
-     * @notice Returns the owner of the agent.
-     * @param agentId The identifier for an agent.
-     * @return The owner of the agent.
+     * @notice Returns the owner of the agent (ERC721 standard)
+     * @param agentId The identifier for an agent
+     * @return owner The owner address of the agent
      */
-    function ownerOf(uint256 agentId) external view returns (address);
+    function ownerOf(uint256 agentId) external view returns (address owner);
 }

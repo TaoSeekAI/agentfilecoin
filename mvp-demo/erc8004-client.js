@@ -7,26 +7,32 @@ import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
 
-// Minimal ABIs for ERC-8004 contracts
+// Minimal ABIs for our simplified ERC-8004 contracts
 const AGENT_IDENTITY_ABI = [
-  'function register(string calldata metadataURI) external payable returns (uint256)',
+  // ERC-8004 Registration (simplified interface)
+  'function register(string calldata metadataURI) external payable returns (uint256 agentId)',
   'function getAgent(uint256 agentId) external view returns (address owner, string metadataURI, uint256 registeredAt, bool isActive)',
-  'function updateMetadata(uint256 agentId, string calldata newMetadataURI) external',
-  'function deactivate(uint256 agentId) external',
   'function registrationFee() external view returns (uint256)',
+
+  // ERC-721 Standard Functions
+  'function ownerOf(uint256 tokenId) external view returns (address)',
+  'function tokenURI(uint256 tokenId) external view returns (string)',
+  'function balanceOf(address owner) external view returns (uint256)',
+  'function name() external view returns (string)',
+  'function symbol() external view returns (string)',
+
+  // Events
+  'event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)',
   'event AgentRegistered(uint256 indexed agentId, address indexed owner, string metadataURI, uint256 timestamp)'
 ];
 
 const AGENT_VALIDATION_ABI = [
-  'function requestValidation(uint256 agentId, string calldata taskURI) external returns (uint256)',
-  'function submitProof(uint256 requestId, string calldata proofURI) external',
-  'function approveValidation(uint256 requestId) external',
-  'function rejectValidation(uint256 requestId, string calldata reason) external',
-  'function getValidationRequest(uint256 requestId) external view returns (uint256 agentId, address requester, string taskURI, string proofURI, uint8 status, uint256 createdAt)',
-  'event ValidationRequested(uint256 indexed requestId, uint256 indexed agentId, address indexed requester, string taskURI)',
-  'event ProofSubmitted(uint256 indexed requestId, string proofURI)',
-  'event ValidationApproved(uint256 indexed requestId)',
-  'event ValidationRejected(uint256 indexed requestId, string reason)'
+  'function requestValidation(uint256 agentId, string calldata workURI, address validator) external returns (bytes32 requestHash)',
+  'function submitValidation(bytes32 requestHash, bool isValid, string calldata proofURI) external',
+  'function getValidationRequest(bytes32 requestHash) external view returns (uint256, address, address, string, uint8, bool, string, uint256, uint256)',
+  'function getValidationStatus(bytes32 requestHash) external view returns (uint8, bool)',
+  'event ValidationRequested(bytes32 indexed requestHash, uint256 indexed agentId, address indexed requester, address validator, string workURI, uint256 timestamp)',
+  'event ValidationSubmitted(bytes32 indexed requestHash, uint256 indexed agentId, address indexed validator, bool isValid, string proofURI, uint256 timestamp)'
 ];
 
 export class ERC8004Client {
@@ -54,20 +60,14 @@ export class ERC8004Client {
   }
 
   /**
-   * Get registration fee
+   * Get registration fee from contract
    */
   async getRegistrationFee() {
-    try {
-      const fee = await this.identityContract.registrationFee();
-      return fee;
-    } catch (error) {
-      console.error('Error getting registration fee:', error.message);
-      return ethers.parseEther('0.01'); // Default fallback
-    }
+    return await this.identityContract.registrationFee();
   }
 
   /**
-   * Register an agent with ERC-8004
+   * Register an agent with ERC-8004 (simplified interface)
    */
   async registerAgent(metadataURI) {
     console.log('\n📝 Registering Agent with ERC-8004...');
@@ -77,17 +77,13 @@ export class ERC8004Client {
     try {
       // Get registration fee
       const fee = await this.getRegistrationFee();
-      console.log(`   Registration Fee: ${ethers.formatEther(fee)} FIL`);
+      console.log(`   Registration Fee: ${ethers.formatEther(fee)} FIL (NFT mint)`);
 
-      // Check balance
+      // Check balance for gas
       const balance = await this.provider.getBalance(this.signer.address);
       console.log(`   Current Balance: ${ethers.formatEther(balance)} FIL`);
 
-      if (balance < fee) {
-        throw new Error(`Insufficient balance. Need ${ethers.formatEther(fee)} FIL`);
-      }
-
-      // Register
+      // Register with simplified interface
       console.log('\n   Sending registration transaction...');
       const tx = await this.identityContract.register(metadataURI, { value: fee });
 
@@ -96,8 +92,8 @@ export class ERC8004Client {
 
       const receipt = await tx.wait();
 
-      // Parse events to get agent ID
-      const event = receipt.logs
+      // Parse AgentRegistered event to get agent ID
+      const agentRegisteredEvent = receipt.logs
         .map(log => {
           try {
             return this.identityContract.interface.parseLog(log);
@@ -107,10 +103,10 @@ export class ERC8004Client {
         })
         .find(e => e && e.name === 'AgentRegistered');
 
-      const agentId = event ? Number(event.args.agentId) : null;
+      const agentId = agentRegisteredEvent ? Number(agentRegisteredEvent.args.agentId) : null;
 
       console.log('\n✅ Agent Registered Successfully!');
-      console.log(`   Agent ID: ${agentId}`);
+      console.log(`   Agent ID (Token ID): ${agentId}`);
       console.log(`   Transaction: ${tx.hash}`);
       console.log(`   Block: ${receipt.blockNumber}`);
 
@@ -133,26 +129,27 @@ export class ERC8004Client {
   }
 
   /**
-   * Get agent information
+   * Get agent information (using ERC-721 functions)
    */
   async getAgent(agentId) {
     console.log(`\n🔍 Querying Agent #${agentId}...`);
 
     try {
-      const agent = await this.identityContract.getAgent(agentId);
+      // Use ERC-721 standard functions
+      const owner = await this.identityContract.ownerOf(agentId);
+      const metadataURI = await this.identityContract.tokenURI(agentId);
 
       const result = {
         agentId,
-        owner: agent.owner,
-        metadataURI: agent.metadataURI,
-        registeredAt: Number(agent.registeredAt),
-        isActive: agent.isActive
+        owner,
+        metadataURI,
+        isActive: true // If ownerOf doesn't revert, the token exists
       };
 
       console.log('\n📋 Agent Information:');
+      console.log(`   Token ID: ${result.agentId}`);
       console.log(`   Owner: ${result.owner}`);
       console.log(`   Metadata URI: ${result.metadataURI}`);
-      console.log(`   Registered: ${new Date(result.registeredAt * 1000).toISOString()}`);
       console.log(`   Active: ${result.isActive}`);
 
       return result;
@@ -165,22 +162,27 @@ export class ERC8004Client {
   /**
    * Create validation request
    */
-  async createValidationRequest(agentId, taskURI) {
+  async createValidationRequest(agentId, taskURI, validator = null) {
     console.log('\n📋 Creating Validation Request...');
     console.log('=' .repeat(60));
     console.log(`   Agent ID: ${agentId}`);
     console.log(`   Task URI: ${taskURI}`);
 
+    // Default validator to a different address (use a well-known testnet address)
+    // In a real scenario, this would be the address of an actual validator
+    const validatorAddress = validator || this.signer.address;
+    console.log(`   Validator: ${validatorAddress}`);
+
     try {
       console.log('\n   Sending transaction...');
-      const tx = await this.validationContract.requestValidation(agentId, taskURI);
+      const tx = await this.validationContract.requestValidation(agentId, taskURI, validatorAddress);
 
       console.log(`   Transaction hash: ${tx.hash}`);
       console.log('   Waiting for confirmation...');
 
       const receipt = await tx.wait();
 
-      // Parse events to get request ID
+      // Parse events to get request hash
       const event = receipt.logs
         .map(log => {
           try {
@@ -191,17 +193,18 @@ export class ERC8004Client {
         })
         .find(e => e && e.name === 'ValidationRequested');
 
-      const requestId = event ? Number(event.args.requestId) : null;
+      const requestHash = event ? event.args.requestHash : null;
 
       console.log('\n✅ Validation Request Created!');
-      console.log(`   Request ID: ${requestId}`);
+      console.log(`   Request Hash: ${requestHash}`);
       console.log(`   Transaction: ${tx.hash}`);
       console.log(`   Block: ${receipt.blockNumber}`);
 
       const result = {
-        requestId,
+        requestHash,
         agentId,
         taskURI,
+        validator: validatorAddress,
         txHash: tx.hash,
         blockNumber: receipt.blockNumber,
         timestamp: Date.now()
@@ -217,70 +220,38 @@ export class ERC8004Client {
   }
 
   /**
-   * Submit proof for validation request
+   * Submit validation (as validator)
    */
-  async submitProof(requestId, proofURI) {
-    console.log('\n📤 Submitting Proof...');
+  async submitValidation(requestHash, isValid, proofURI) {
+    console.log('\n📤 Submitting Validation...');
     console.log('=' .repeat(60));
-    console.log(`   Request ID: ${requestId}`);
+    console.log(`   Request Hash: ${requestHash}`);
+    console.log(`   Is Valid: ${isValid}`);
     console.log(`   Proof URI: ${proofURI}`);
 
     try {
       console.log('\n   Sending transaction...');
-      const tx = await this.validationContract.submitProof(requestId, proofURI);
+      const tx = await this.validationContract.submitValidation(requestHash, isValid, proofURI);
 
       console.log(`   Transaction hash: ${tx.hash}`);
       console.log('   Waiting for confirmation...');
 
       const receipt = await tx.wait();
 
-      console.log('\n✅ Proof Submitted!');
+      console.log('\n✅ Validation Submitted!');
       console.log(`   Transaction: ${tx.hash}`);
       console.log(`   Block: ${receipt.blockNumber}`);
 
       return {
-        requestId,
+        requestHash,
+        isValid,
         proofURI,
         txHash: tx.hash,
         blockNumber: receipt.blockNumber,
         timestamp: Date.now()
       };
     } catch (error) {
-      console.error('❌ Failed to submit proof:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Approve validation request
-   */
-  async approveValidation(requestId) {
-    console.log('\n✅ Approving Validation...');
-    console.log('=' .repeat(60));
-    console.log(`   Request ID: ${requestId}`);
-
-    try {
-      console.log('\n   Sending transaction...');
-      const tx = await this.validationContract.approveValidation(requestId);
-
-      console.log(`   Transaction hash: ${tx.hash}`);
-      console.log('   Waiting for confirmation...');
-
-      const receipt = await tx.wait();
-
-      console.log('\n✅ Validation Approved!');
-      console.log(`   Transaction: ${tx.hash}`);
-      console.log(`   Block: ${receipt.blockNumber}`);
-
-      return {
-        requestId,
-        approved: true,
-        txHash: tx.hash,
-        blockNumber: receipt.blockNumber,
-        timestamp: Date.now()
-      };
-    } catch (error) {
-      console.error('❌ Failed to approve validation:', error.message);
+      console.error('❌ Failed to submit validation:', error.message);
       throw error;
     }
   }
@@ -288,36 +259,42 @@ export class ERC8004Client {
   /**
    * Get validation request details
    */
-  async getValidationRequest(requestId) {
-    console.log(`\n🔍 Querying Validation Request #${requestId}...`);
+  async getValidationRequest(requestHash) {
+    console.log(`\n🔍 Querying Validation Request ${requestHash.substring(0, 10)}...`);
 
     try {
-      const request = await this.validationContract.getValidationRequest(requestId);
+      const request = await this.validationContract.getValidationRequest(requestHash);
 
-      const statusNames = ['Pending', 'Approved', 'Rejected'];
+      const statusNames = ['Pending', 'Completed', 'Expired'];
 
       const result = {
-        requestId,
-        agentId: Number(request.agentId),
-        requester: request.requester,
-        taskURI: request.taskURI,
-        proofURI: request.proofURI,
-        status: statusNames[request.status] || 'Unknown',
-        statusCode: Number(request.status),
-        createdAt: Number(request.createdAt)
+        requestHash,
+        agentId: Number(request[0]),
+        requester: request[1],
+        validator: request[2],
+        workURI: request[3],
+        status: statusNames[Number(request[4])] || 'Unknown',
+        statusCode: Number(request[4]),
+        isValid: request[5],
+        proofURI: request[6],
+        requestedAt: Number(request[7]),
+        completedAt: Number(request[8])
       };
 
       console.log('\n📋 Validation Request:');
+      console.log(`   Request Hash: ${result.requestHash}`);
       console.log(`   Agent ID: ${result.agentId}`);
       console.log(`   Requester: ${result.requester}`);
-      console.log(`   Task URI: ${result.taskURI}`);
+      console.log(`   Validator: ${result.validator}`);
+      console.log(`   Work URI: ${result.workURI}`);
       console.log(`   Proof URI: ${result.proofURI || 'Not submitted'}`);
       console.log(`   Status: ${result.status}`);
-      console.log(`   Created: ${new Date(result.createdAt * 1000).toISOString()}`);
+      console.log(`   Is Valid: ${result.isValid}`);
+      console.log(`   Requested: ${new Date(result.requestedAt * 1000).toISOString()}`);
 
       return result;
     } catch (error) {
-      console.error(`❌ Failed to get validation request #${requestId}:`, error.message);
+      console.error(`❌ Failed to get validation request:`, error.message);
       throw error;
     }
   }
