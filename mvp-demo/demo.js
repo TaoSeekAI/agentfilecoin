@@ -16,16 +16,29 @@ import { ERC8004Client } from './erc8004-client.js';
 
 // Configuration
 const CONFIG = {
-  rpcUrl: process.env.RPC_URL || 'https://api.calibration.node.glif.io/rpc/v1',
-  privateKey: process.env.PRIVATE_KEY,
-  chainId: parseInt(process.env.CHAIN_ID || '314159'),
+  // NFT Network (e.g., Ethereum Mainnet for scanning NFTs)
+  nftNetwork: {
+    rpcUrl: process.env.NFT_NETWORK_RPC_URL || 'https://eth.llamarpc.com',
+    chainId: parseInt(process.env.NFT_NETWORK_CHAIN_ID || '1'),
+    name: process.env.NFT_NETWORK_NAME || 'Ethereum Mainnet'
+  },
 
-  // Contract addresses
+  // Validation Network (e.g., Sepolia for ERC-8004 contracts)
+  validationNetwork: {
+    rpcUrl: process.env.VALIDATION_NETWORK_RPC_URL || 'https://sepolia.gateway.tenderly.co',
+    chainId: parseInt(process.env.VALIDATION_NETWORK_CHAIN_ID || '11155111'),
+    name: process.env.VALIDATION_NETWORK_NAME || 'Sepolia Testnet'
+  },
+
+  // Private key (used on validation network)
+  privateKey: process.env.PRIVATE_KEY,
+
+  // Contract addresses (on validation network)
   identityContract: process.env.AGENT_IDENTITY_ADDRESS,
   reputationContract: process.env.AGENT_REPUTATION_ADDRESS,
   validationContract: process.env.AGENT_VALIDATION_ADDRESS,
 
-  // NFT configuration
+  // NFT configuration (on NFT network)
   nftContract: process.env.NFT_CONTRACT_ADDRESS,
   startTokenId: parseInt(process.env.NFT_START_TOKEN_ID || '1'),
   endTokenId: parseInt(process.env.NFT_END_TOKEN_ID || '10'),
@@ -73,24 +86,37 @@ function validateConfig() {
   }
 
   console.log('✅ Configuration valid');
-  console.log(`   Network: ${CONFIG.rpcUrl}`);
-  console.log(`   Chain ID: ${CONFIG.chainId}`);
+  console.log('\n📡 NFT Network (for scanning):');
+  console.log(`   Name: ${CONFIG.nftNetwork.name}`);
+  console.log(`   RPC: ${CONFIG.nftNetwork.rpcUrl}`);
+  console.log(`   Chain ID: ${CONFIG.nftNetwork.chainId}`);
   console.log(`   NFT Contract: ${CONFIG.nftContract}`);
   console.log(`   Token Range: ${CONFIG.startTokenId} - ${CONFIG.endTokenId}`);
+
+  console.log('\n📡 Validation Network (for ERC-8004):');
+  console.log(`   Name: ${CONFIG.validationNetwork.name}`);
+  console.log(`   RPC: ${CONFIG.validationNetwork.rpcUrl}`);
+  console.log(`   Chain ID: ${CONFIG.validationNetwork.chainId}`);
+  console.log(`   Contracts: Identity, Validation`);
 }
 
 /**
- * Initialize ethers provider and signer
+ * Initialize ethers providers and signer
  */
 function initializeEthers() {
   console.log('\n🔐 Initializing Ethers...');
 
-  const provider = new ethers.JsonRpcProvider(CONFIG.rpcUrl);
-  const signer = new ethers.Wallet(CONFIG.privateKey, provider);
+  // NFT Network provider (read-only, for scanning NFTs)
+  const nftProvider = new ethers.JsonRpcProvider(CONFIG.nftNetwork.rpcUrl);
+  console.log(`✅ NFT Provider: ${CONFIG.nftNetwork.name}`);
 
+  // Validation Network provider and signer (for ERC-8004 transactions)
+  const validationProvider = new ethers.JsonRpcProvider(CONFIG.validationNetwork.rpcUrl);
+  const signer = new ethers.Wallet(CONFIG.privateKey, validationProvider);
+  console.log(`✅ Validation Provider: ${CONFIG.validationNetwork.name}`);
   console.log(`✅ Wallet: ${signer.address}`);
 
-  return { provider, signer };
+  return { nftProvider, validationProvider, signer };
 }
 
 /**
@@ -124,12 +150,12 @@ async function main() {
   setupProxy();
   validateConfig();
 
-  const { provider, signer } = initializeEthers();
+  const { nftProvider, validationProvider, signer } = initializeEthers();
 
   try {
-    // Check balance
-    console.log('\n💰 Checking Balance...');
-    const balance = await provider.getBalance(signer.address);
+    // Check balance on validation network
+    console.log('\n💰 Checking Balance on Validation Network...');
+    const balance = await validationProvider.getBalance(signer.address);
 
     // Determine network name and currency
     const networkInfo = {
@@ -139,7 +165,7 @@ async function main() {
       11155420: { name: 'Optimism Sepolia', currency: 'ETH', faucet: 'https://app.optimism.io/faucet' }
     };
 
-    const network = networkInfo[CONFIG.chainId] || { name: 'Unknown', currency: 'ETH', faucet: 'N/A' };
+    const network = networkInfo[CONFIG.validationNetwork.chainId] || { name: CONFIG.validationNetwork.name, currency: 'ETH', faucet: 'N/A' };
 
     console.log(`   Network: ${network.name}`);
     console.log(`   Balance: ${ethers.formatEther(balance)} ${network.currency}`);
@@ -156,19 +182,22 @@ async function main() {
     console.log('PHASE 1: Initialize Clients');
     console.log('='.repeat(80));
 
+    console.log(`\n📡 NFTScanner: Using ${CONFIG.nftNetwork.name} (Chain ID: ${CONFIG.nftNetwork.chainId})`);
     const nftScanner = new NFTScanner(
       CONFIG.nftContract,
-      provider,
+      nftProvider,
       CONFIG.ipfsGateway
     );
 
+    console.log(`📡 FilecoinUploader: Using ${CONFIG.validationNetwork.name} for Filecoin operations`);
     const filecoinUploader = new FilecoinUploader(
       CONFIG.privateKey,
-      CONFIG.rpcUrl
+      CONFIG.validationNetwork.rpcUrl
     );
 
+    console.log(`📡 ERC8004Client: Using ${CONFIG.validationNetwork.name} (Chain ID: ${CONFIG.validationNetwork.chainId})`);
     const erc8004Client = new ERC8004Client(
-      provider,
+      validationProvider,
       signer,
       CONFIG.identityContract,
       CONFIG.validationContract
@@ -179,6 +208,7 @@ async function main() {
     // ========================================================================
     console.log('\n' + '='.repeat(80));
     console.log('PHASE 2: Register ERC-8004 Agent');
+    console.log(`Network: ${CONFIG.validationNetwork.name}`);
     console.log('='.repeat(80));
 
     const agentMetadata = erc8004Client.generateAgentMetadata(
@@ -203,6 +233,7 @@ async function main() {
     // ========================================================================
     console.log('\n' + '='.repeat(80));
     console.log('PHASE 3: Scan NFT Project');
+    console.log(`Network: ${CONFIG.nftNetwork.name}`);
     console.log('='.repeat(80));
 
     const scanResult = await nftScanner.scan(
@@ -237,6 +268,7 @@ async function main() {
     // ========================================================================
     console.log('\n' + '='.repeat(80));
     console.log('PHASE 4: Create ERC-8004 Validation Request');
+    console.log(`Network: ${CONFIG.validationNetwork.name}`);
     console.log('='.repeat(80));
 
     const taskMetadata = erc8004Client.generateTaskMetadata(
@@ -282,6 +314,7 @@ async function main() {
     // ========================================================================
     console.log('\n' + '='.repeat(80));
     console.log('PHASE 6: Submit Proof to ERC-8004');
+    console.log(`Network: ${CONFIG.validationNetwork.name}`);
     console.log('='.repeat(80));
 
     const proofMetadata = erc8004Client.generateProofMetadata(
@@ -303,6 +336,7 @@ async function main() {
     // ========================================================================
     console.log('\n' + '='.repeat(80));
     console.log('PHASE 7: Approve Validation');
+    console.log(`Network: ${CONFIG.validationNetwork.name}`);
     console.log('='.repeat(80));
 
     console.log('\n⏳ Waiting 3 seconds before approval...');
@@ -332,9 +366,17 @@ async function main() {
     const finalReport = {
       title: 'NFT IPFS to Filecoin Migration - Complete Report',
       timestamp: new Date().toISOString(),
-      network: {
-        rpcUrl: CONFIG.rpcUrl,
-        chainId: CONFIG.chainId
+      networks: {
+        nft: {
+          name: CONFIG.nftNetwork.name,
+          rpcUrl: CONFIG.nftNetwork.rpcUrl,
+          chainId: CONFIG.nftNetwork.chainId
+        },
+        validation: {
+          name: CONFIG.validationNetwork.name,
+          rpcUrl: CONFIG.validationNetwork.rpcUrl,
+          chainId: CONFIG.validationNetwork.chainId
+        }
       },
       contracts: {
         identity: CONFIG.identityContract,
@@ -391,6 +433,8 @@ async function main() {
     console.log('='.repeat(80));
 
     console.log('\n📊 Summary:');
+    console.log(`   NFT Network: ${CONFIG.nftNetwork.name} (Chain ID: ${CONFIG.nftNetwork.chainId})`);
+    console.log(`   Validation Network: ${CONFIG.validationNetwork.name} (Chain ID: ${CONFIG.validationNetwork.chainId})`);
     console.log(`   ERC-8004 Agent ID: ${agentId}`);
     console.log(`   Validation Request ID: ${requestId}`);
     console.log(`   Validation Status: ${finalValidationState.status}`);

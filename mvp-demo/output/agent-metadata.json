@@ -1,0 +1,16 @@
+{
+  "name": "NFT Migration Agent",
+  "description": "Automated agent for migrating NFT metadata from IPFS to Filecoin",
+  "image": "",
+  "endpoints": [],
+  "capabilities": [
+    "nft-scanning",
+    "ipfs-migration",
+    "filecoin-storage"
+  ],
+  "supportedTrust": [
+    "validation"
+  ],
+  "version": "1.0.0",
+  "timestamp": "2025-10-15T13:49:52.594Z"
+}

@@ -1,0 +1,247 @@
+{
+  "schemaVersion": "1.0.0",
+  "scanMetadata": {
+    "scanId": "scan-20250115-143022-a7f3c2d9",
+    "startTime": "2025-01-15T14:30:22.000Z",
+    "endTime": "2025-01-15T14:35:45.000Z",
+    "contractAddress": "0x1234567890123456789012345678901234567890",
+    "contractName": "CoolNFT Collection",
+    "contractSymbol": "COOL",
+    "tokenRange": {
+      "start": 1,
+      "end": 50
+    }
+  },
+  "failures": [
+    {
+      "failureId": "fail-a7f3c2d9",
+      "timestamp": "2025-01-15T14:31:05.123Z",
+      "cid": "QmYHNYAaYK6JE4dVKZK6qNvmAMJ8dVq7bqQJm5Y4cBe5Qp",
+      "contentType": "metadata",
+      "nftToken": {
+        "contractAddress": "0x1234567890123456789012345678901234567890",
+        "tokenId": "7",
+        "owner": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+        "tokenURI": "ipfs://QmYHNYAaYK6JE4dVKZK6qNvmAMJ8dVq7bqQJm5Y4cBe5Qp"
+      },
+      "errorType": "not_found",
+      "errorDetails": {
+        "message": "Request failed with status code 404",
+        "statusCode": 404,
+        "errorCode": null,
+        "stack": "Error: Request failed with status code 404\n    at createError (/node_modules/axios/lib/core/createError.js:16:15)"
+      },
+      "gatewayAttempts": [
+        {
+          "gateway": "https://ipfs.io/ipfs/",
+          "attemptTime": "2025-01-15T14:31:05.100Z",
+          "result": "404",
+          "responseTime": null
+        },
+        {
+          "gateway": "https://gateway.pinata.cloud/ipfs/",
+          "attemptTime": "2025-01-15T14:31:06.200Z",
+          "result": "404",
+          "responseTime": null
+        },
+        {
+          "gateway": "https://dweb.link/ipfs/",
+          "attemptTime": "2025-01-15T14:31:07.300Z",
+          "result": "404",
+          "responseTime": null
+        },
+        {
+          "gateway": "https://cloudflare-ipfs.com/ipfs/",
+          "attemptTime": "2025-01-15T14:31:08.400Z",
+          "result": "404",
+          "responseTime": null
+        }
+      ],
+      "shouldExist": true,
+      "retryable": false,
+      "severity": "critical",
+      "notes": "All 4 gateway(s) failed - content appears to be unpinned"
+    },
+    {
+      "failureId": "fail-b8e4d3f1",
+      "timestamp": "2025-01-15T14:32:15.456Z",
+      "cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
+      "contentType": "image",
+      "nftToken": {
+        "contractAddress": "0x1234567890123456789012345678901234567890",
+        "tokenId": "12",
+        "owner": "0x9876543210987654321098765432109876543210",
+        "tokenURI": "ipfs://QmValidMetadataCID123"
+      },
+      "errorType": "timeout",
+      "errorDetails": {
+        "message": "timeout of 10000ms exceeded",
+        "statusCode": null,
+        "errorCode": "ECONNABORTED",
+        "stack": "Error: timeout of 10000ms exceeded\n    at createError (/node_modules/axios/lib/core/createError.js:16:15)"
+      },
+      "gatewayAttempts": [
+        {
+          "gateway": "https://ipfs.io/ipfs/",
+          "attemptTime": "2025-01-15T14:32:05.000Z",
+          "result": "timeout",
+          "responseTime": null
+        },
+        {
+          "gateway": "https://gateway.pinata.cloud/ipfs/",
+          "attemptTime": "2025-01-15T14:32:15.100Z",
+          "result": "timeout",
+          "responseTime": null
+        }
+      ],
+      "shouldExist": true,
+      "retryable": true,
+      "severity": "medium",
+      "notes": "Image CID from metadata.image field - may be temporarily slow"
+    },
+    {
+      "failureId": "fail-c9f5e4g2",
+      "timestamp": "2025-01-15T14:33:22.789Z",
+      "cid": "QmTzQ1JRkWErjk39mryYw2WVaphAZNAREyMchXzYQ7c15n",
+      "contentType": "image",
+      "nftToken": {
+        "contractAddress": "0x1234567890123456789012345678901234567890",
+        "tokenId": "23",
+        "owner": "0x1111222233334444555566667777888899990000",
+        "tokenURI": "ipfs://QmAnotherValidMetadataCID"
+      },
+      "errorType": "gateway_error",
+      "errorDetails": {
+        "message": "Request failed with status code 503",
+        "statusCode": 503,
+        "errorCode": null,
+        "stack": "Error: Request failed with status code 503\n    at createError (/node_modules/axios/lib/core/createError.js:16:15)"
+      },
+      "gatewayAttempts": [
+        {
+          "gateway": "https://ipfs.io/ipfs/",
+          "attemptTime": "2025-01-15T14:33:20.000Z",
+          "result": "503",
+          "responseTime": null
+        },
+        {
+          "gateway": "https://gateway.pinata.cloud/ipfs/",
+          "attemptTime": "2025-01-15T14:33:21.500Z",
+          "result": "500",
+          "responseTime": null
+        },
+        {
+          "gateway": "https://dweb.link/ipfs/",
+          "attemptTime": "2025-01-15T14:33:22.700Z",
+          "result": "503",
+          "responseTime": null
+        }
+      ],
+      "shouldExist": true,
+      "retryable": true,
+      "severity": "medium",
+      "notes": "Multiple gateways experiencing server errors - likely temporary"
+    },
+    {
+      "failureId": "fail-d0g6f5h3",
+      "timestamp": "2025-01-15T14:34:10.234Z",
+      "cid": "QmNVMWM8HKUpNtUHhcWJpQwwQq2DK7xwQnWXZz8v9uGSFG",
+      "contentType": "metadata",
+      "nftToken": {
+        "contractAddress": "0x1234567890123456789012345678901234567890",
+        "tokenId": "35",
+        "owner": "0xaaabbbcccdddeeefffaaabbbcccdddeeefff000",
+        "tokenURI": "ipfs://QmNVMWM8HKUpNtUHhcWJpQwwQq2DK7xwQnWXZz8v9uGSFG"
+      },
+      "errorType": "not_found",
+      "errorDetails": {
+        "message": "Request failed with status code 404",
+        "statusCode": 404,
+        "errorCode": null,
+        "stack": "Error: Request failed with status code 404\n    at createError (/node_modules/axios/lib/core/createError.js:16:15)"
+      },
+      "gatewayAttempts": [
+        {
+          "gateway": "https://ipfs.io/ipfs/",
+          "attemptTime": "2025-01-15T14:34:08.000Z",
+          "result": "404",
+          "responseTime": null
+        },
+        {
+          "gateway": "https://gateway.pinata.cloud/ipfs/",
+          "attemptTime": "2025-01-15T14:34:09.100Z",
+          "result": "404",
+          "responseTime": null
+        },
+        {
+          "gateway": "https://dweb.link/ipfs/",
+          "attemptTime": "2025-01-15T14:34:10.200Z",
+          "result": "404",
+          "responseTime": null
+        }
+      ],
+      "shouldExist": true,
+      "retryable": false,
+      "severity": "critical",
+      "notes": "All 3 gateway(s) failed - metadata completely inaccessible, NFT is non-functional"
+    },
+    {
+      "failureId": "fail-e1h7g6i4",
+      "timestamp": "2025-01-15T14:35:05.567Z",
+      "cid": "QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB",
+      "contentType": "image",
+      "nftToken": {
+        "contractAddress": "0x1234567890123456789012345678901234567890",
+        "tokenId": "42",
+        "owner": "0x1234123412341234123412341234123412341234",
+        "tokenURI": "ipfs://QmValidTokenURI42"
+      },
+      "errorType": "network_error",
+      "errorDetails": {
+        "message": "getaddrinfo ENOTFOUND ipfs.io",
+        "statusCode": null,
+        "errorCode": "ENOTFOUND",
+        "stack": "Error: getaddrinfo ENOTFOUND ipfs.io\n    at GetAddrInfoReqWrap.onlookup [as oncomplete]"
+      },
+      "gatewayAttempts": [
+        {
+          "gateway": "https://ipfs.io/ipfs/",
+          "attemptTime": "2025-01-15T14:35:03.000Z",
+          "result": "network_error",
+          "responseTime": null
+        },
+        {
+          "gateway": "https://gateway.pinata.cloud/ipfs/",
+          "attemptTime": "2025-01-15T14:35:04.500Z",
+          "result": "network_error",
+          "responseTime": null
+        }
+      ],
+      "shouldExist": true,
+      "retryable": true,
+      "severity": "low",
+      "notes": "Network connectivity issues - likely local or temporary DNS problem"
+    }
+  ],
+  "statistics": {
+    "totalAttempts": 150,
+    "totalFailures": 5,
+    "successRate": "96.67",
+    "failuresByType": {
+      "timeout": 1,
+      "not_found": 2,
+      "gateway_error": 1,
+      "network_error": 1,
+      "parse_error": 0,
+      "other": 0
+    },
+    "failuresByGateway": {
+      "https://ipfs.io/ipfs/": 5,
+      "https://gateway.pinata.cloud/ipfs/": 4,
+      "https://dweb.link/ipfs/": 3,
+      "https://cloudflare-ipfs.com/ipfs/": 1
+    },
+    "uniqueFailedCIDs": 5,
+    "affectedTokens": 5
+  }
+}

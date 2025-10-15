@@ -1,0 +1,269 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/ipfs-failure-tracking.schema.json",
+  "title": "IPFS Content Availability Failure Tracking",
+  "description": "Schema for tracking IPFS content availability issues during NFT scanning",
+  "type": "object",
+  "required": ["schemaVersion", "scanMetadata", "failures", "statistics"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Version of this schema",
+      "const": "1.0.0"
+    },
+    "scanMetadata": {
+      "type": "object",
+      "description": "Metadata about the scan operation",
+      "required": ["scanId", "startTime", "endTime", "contractAddress", "tokenRange"],
+      "properties": {
+        "scanId": {
+          "type": "string",
+          "description": "Unique identifier for this scan",
+          "pattern": "^scan-[0-9]{8}-[0-9]{6}-[a-f0-9]{8}$"
+        },
+        "startTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when scan started"
+        },
+        "endTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when scan completed"
+        },
+        "contractAddress": {
+          "type": "string",
+          "pattern": "^0x[a-fA-F0-9]{40}$",
+          "description": "Ethereum contract address being scanned"
+        },
+        "contractName": {
+          "type": "string",
+          "description": "Name of the NFT collection"
+        },
+        "contractSymbol": {
+          "type": "string",
+          "description": "Symbol of the NFT collection"
+        },
+        "tokenRange": {
+          "type": "object",
+          "required": ["start", "end"],
+          "properties": {
+            "start": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "end": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "failures": {
+      "type": "array",
+      "description": "Array of IPFS content availability failures",
+      "items": {
+        "$ref": "#/definitions/failure"
+      }
+    },
+    "statistics": {
+      "type": "object",
+      "description": "Aggregated statistics about IPFS availability",
+      "required": ["totalAttempts", "totalFailures", "successRate", "failuresByType", "failuresByGateway"],
+      "properties": {
+        "totalAttempts": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of IPFS content fetch attempts"
+        },
+        "totalFailures": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of failures"
+        },
+        "successRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Success rate as percentage"
+        },
+        "failuresByType": {
+          "type": "object",
+          "description": "Count of failures grouped by error type",
+          "properties": {
+            "timeout": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "not_found": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "gateway_error": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "network_error": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "parse_error": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "other": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "failuresByGateway": {
+          "type": "object",
+          "description": "Count of failures grouped by gateway URL",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "uniqueFailedCIDs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of unique CIDs that failed"
+        },
+        "affectedTokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of NFT tokens affected by failures"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "failure": {
+      "type": "object",
+      "required": ["failureId", "timestamp", "cid", "contentType", "nftToken", "errorType", "gatewayAttempts"],
+      "properties": {
+        "failureId": {
+          "type": "string",
+          "description": "Unique identifier for this failure",
+          "pattern": "^fail-[a-f0-9]{8}$"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when failure occurred"
+        },
+        "cid": {
+          "type": "string",
+          "description": "IPFS CID that failed to load",
+          "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58,})$"
+        },
+        "contentType": {
+          "type": "string",
+          "enum": ["metadata", "image", "video", "audio", "other"],
+          "description": "Type of content that failed"
+        },
+        "nftToken": {
+          "type": "object",
+          "description": "NFT token information",
+          "required": ["contractAddress", "tokenId"],
+          "properties": {
+            "contractAddress": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "tokenId": {
+              "type": ["string", "integer"],
+              "description": "Token ID (can be string for large numbers)"
+            },
+            "owner": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$",
+              "description": "Current owner address (if available)"
+            },
+            "tokenURI": {
+              "type": "string",
+              "description": "Original tokenURI from contract"
+            }
+          }
+        },
+        "errorType": {
+          "type": "string",
+          "enum": ["timeout", "not_found", "gateway_error", "network_error", "parse_error", "other"],
+          "description": "Classification of the error"
+        },
+        "errorDetails": {
+          "type": "object",
+          "description": "Detailed error information",
+          "properties": {
+            "message": {
+              "type": "string",
+              "description": "Human-readable error message"
+            },
+            "statusCode": {
+              "type": "integer",
+              "description": "HTTP status code (if applicable)"
+            },
+            "errorCode": {
+              "type": "string",
+              "description": "Error code from the gateway or network layer"
+            },
+            "stack": {
+              "type": "string",
+              "description": "Stack trace (for debugging)"
+            }
+          }
+        },
+        "gatewayAttempts": {
+          "type": "array",
+          "description": "List of gateway URLs attempted",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["gateway", "attemptTime", "result"],
+            "properties": {
+              "gateway": {
+                "type": "string",
+                "format": "uri",
+                "description": "Gateway URL attempted"
+              },
+              "attemptTime": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "result": {
+                "type": "string",
+                "enum": ["timeout", "404", "500", "503", "network_error", "other"],
+                "description": "Result of this gateway attempt"
+              },
+              "responseTime": {
+                "type": "integer",
+                "description": "Response time in milliseconds (if measurable)"
+              }
+            }
+          }
+        },
+        "shouldExist": {
+          "type": "boolean",
+          "description": "Whether this content should theoretically exist (based on contract data)",
+          "default": true
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "Whether this failure is potentially retryable",
+          "default": true
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low"],
+          "description": "Severity level of this failure"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes or context about the failure"
+        }
+      }
+    }
+  }
+}
