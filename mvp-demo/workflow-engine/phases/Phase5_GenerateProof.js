@@ -4,8 +4,11 @@
 
 import 'dotenv/config';
 import { ethers } from 'ethers';
+import fs from 'fs';
+import path from 'path';
 import { PhaseBase } from './PhaseBase.js';
 import { ERC8004OfficialClient } from '../../erc8004-official-client.js';
+import { FilecoinUploaderReal } from '../../filecoin-uploader-real.js';
 
 export class Phase5_GenerateProof extends PhaseBase {
   constructor() {
@@ -37,7 +40,37 @@ export class Phase5_GenerateProof extends PhaseBase {
       context.phase4Result.results
     );
 
-    const proofURI = 'ipfs://QmProof' + Math.random().toString(36).substr(2);
+    // 上传证明元数据到 Filecoin
+    this.log('\n📤 Uploading proof metadata to Filecoin...');
+
+    // 初始化 Filecoin uploader
+    const filecoinUploader = new FilecoinUploaderReal(
+      process.env.PRIVATE_KEY,
+      process.env.FILECOIN_NETWORK_RPC_URL
+    );
+    await filecoinUploader.initialize();
+
+    // 保存本地副本
+    const outputDir = './output';
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    const localPath = path.join(outputDir, 'proof-metadata-interactive.json');
+    fs.writeFileSync(localPath, JSON.stringify(proofMetadata, null, 2));
+    this.log(`Local copy saved: ${localPath}`);
+
+    // 上传到 Filecoin
+    let proofURI;
+    try {
+      const uploadResult = await filecoinUploader.uploadMetadata(proofMetadata, 'proof-metadata-interactive');
+      proofURI = uploadResult.uri;  // Returns ipfs://{cid}
+      this.logSuccess(`Proof metadata uploaded to Filecoin: ${proofURI}`);
+      this.log(`Retrieval URL: ${uploadResult.retrievalUrl}`);
+    } catch (error) {
+      this.log(`⚠️  Failed to upload to Filecoin: ${error.message}`);
+      this.log('Falling back to temporary URI');
+      proofURI = 'ipfs://QmProof' + Math.random().toString(36).substr(2);
+    }
 
     this.logSuccess('Proof metadata generated');
     this.log(`Migration Success: ${context.phase4Result.summary.successful}/${context.phase4Result.summary.total}`);

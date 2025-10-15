@@ -1,0 +1,18 @@
+{
+  "name": "NFT IPFS to Filecoin Migration Agent",
+  "description": "An AI agent that migrates NFT metadata and images from IPFS to Filecoin for permanent storage",
+  "capabilities": {
+    "capabilities": [
+      "nft-scanning",
+      "ipfs-retrieval",
+      "filecoin-upload",
+      "erc8004-validation"
+    ],
+    "version": "1.0.0",
+    "author": "Interactive Workflow System"
+  },
+  "type": "AI Agent",
+  "version": "1.0.0",
+  "createdAt": "2025-10-15T15:46:26.147Z",
+  "owner": "0x1D621356Bc9484F5e5858a00103338579Cba9613"
+}

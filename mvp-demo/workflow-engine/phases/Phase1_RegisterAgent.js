@@ -5,8 +5,11 @@
 
 import 'dotenv/config';
 import { ethers } from 'ethers';
+import fs from 'fs';
+import path from 'path';
 import { PhaseBase } from './PhaseBase.js';
 import { ERC8004OfficialClient } from '../../erc8004-official-client.js';
+import { FilecoinUploaderReal } from '../../filecoin-uploader-real.js';
 
 export class Phase1_RegisterAgent extends PhaseBase {
   constructor() {
@@ -59,12 +62,40 @@ export class Phase1_RegisterAgent extends PhaseBase {
       }
     );
 
+    // 上传元数据到 Filecoin
+    this.log('\n📤 Uploading agent metadata to Filecoin...');
+
+    // 初始化 Filecoin uploader
+    const filecoinUploader = new FilecoinUploaderReal(
+      process.env.PRIVATE_KEY,
+      process.env.FILECOIN_NETWORK_RPC_URL
+    );
+    await filecoinUploader.initialize();
+
+    // 保存本地副本
+    const outputDir = './output';
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    const localPath = path.join(outputDir, 'agent-metadata-interactive.json');
+    fs.writeFileSync(localPath, JSON.stringify(metadata, null, 2));
+    this.log(`Local copy saved: ${localPath}`);
+
+    // 上传到 Filecoin
+    let metadataUri;
+    try {
+      const uploadResult = await filecoinUploader.uploadMetadata(metadata, 'agent-metadata-interactive');
+      metadataUri = uploadResult.uri;  // Returns ipfs://{cid}
+      this.logSuccess(`Metadata uploaded to Filecoin: ${metadataUri}`);
+      this.log(`Retrieval URL: ${uploadResult.retrievalUrl}`);
+    } catch (error) {
+      this.log(`⚠️  Failed to upload to Filecoin: ${error.message}`);
+      this.log('Falling back to temporary URI');
+      metadataUri = 'ipfs://QmTemp' + Math.random().toString(36).substr(2);
+    }
+
     // 注册 Agent
     this.log('\n📤 Registering agent on-chain...');
-
-    // 保存元数据到临时文件
-    const metadataUri = 'ipfs://QmTemp' + Math.random().toString(36).substr(2);
-
     const registration = await erc8004Client.registerAgent(metadataUri);
 
     this.logSuccess(`Agent registered!`);

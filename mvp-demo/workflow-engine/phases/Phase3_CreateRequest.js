@@ -4,8 +4,11 @@
 
 import 'dotenv/config';
 import { ethers } from 'ethers';
+import fs from 'fs';
+import path from 'path';
 import { PhaseBase } from './PhaseBase.js';
 import { ERC8004OfficialClient } from '../../erc8004-official-client.js';
+import { FilecoinUploaderReal } from '../../filecoin-uploader-real.js';
 
 export class Phase3_CreateRequest extends PhaseBase {
   constructor() {
@@ -40,10 +43,41 @@ export class Phase3_CreateRequest extends PhaseBase {
       context.phase2Result.uniqueCIDs
     );
 
-    const taskURI = 'ipfs://QmTask' + Math.random().toString(36).substr(2);
+    // 上传任务元数据到 Filecoin
+    this.log('\n📤 Uploading task metadata to Filecoin...');
+
+    // 初始化 Filecoin uploader
+    const filecoinUploader = new FilecoinUploaderReal(
+      process.env.PRIVATE_KEY,
+      process.env.FILECOIN_NETWORK_RPC_URL
+    );
+    await filecoinUploader.initialize();
+
+    // 保存本地副本
+    const outputDir = './output';
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    const localPath = path.join(outputDir, 'task-metadata-interactive.json');
+    fs.writeFileSync(localPath, JSON.stringify(taskMetadata, null, 2));
+    this.log(`Local copy saved: ${localPath}`);
+
+    // 上传到 Filecoin
+    let taskURI;
+    try {
+      const uploadResult = await filecoinUploader.uploadMetadata(taskMetadata, 'task-metadata-interactive');
+      taskURI = uploadResult.uri;  // Returns ipfs://{cid}
+      this.logSuccess(`Task metadata uploaded to Filecoin: ${taskURI}`);
+      this.log(`Retrieval URL: ${uploadResult.retrievalUrl}`);
+    } catch (error) {
+      this.log(`⚠️  Failed to upload to Filecoin: ${error.message}`);
+      this.log('Falling back to temporary URI');
+      taskURI = 'ipfs://QmTask' + Math.random().toString(36).substr(2);
+    }
+
     const validatorAddress = validatorSigner.address;
 
-    this.log(`Agent ID: ${context.phase1Result.agentId}`);
+    this.log(`\nAgent ID: ${context.phase1Result.agentId}`);
     this.log(`Validator: ${validatorAddress}`);
     this.log(`Task: Migrate ${context.phase2Result.uniqueCIDs.length} IPFS CIDs`);
 

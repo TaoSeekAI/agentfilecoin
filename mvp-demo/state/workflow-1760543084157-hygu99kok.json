@@ -1,0 +1,67 @@
+{
+  "workflowId": "workflow-1760543084157-hygu99kok",
+  "createdAt": "2025-10-15T15:44:44.157Z",
+  "updatedAt": "2025-10-15T15:44:44.758Z",
+  "currentPhase": 0,
+  "status": "initialized",
+  "config": {
+    "nftContract": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+    "startTokenId": 0,
+    "endTokenId": 4,
+    "validatorAddress": null,
+    "nftNetwork": {
+      "rpcUrl": "https://eth-mainnet.public.blastapi.io",
+      "chainId": "1",
+      "name": "Ethereum Mainnet"
+    },
+    "tokenRange": {
+      "start": 0,
+      "end": 4
+    }
+  },
+  "phases": {
+    "phase1": {
+      "status": "failed",
+      "result": null,
+      "startedAt": "2025-10-15T15:44:44.159Z",
+      "updatedAt": "2025-10-15T15:44:44.757Z",
+      "failedAt": "2025-10-15T15:44:44.757Z",
+      "error": {
+        "message": "this.synapse.getAddress is not a function",
+        "stack": "TypeError: this.synapse.getAddress is not a function\n    at FilecoinUploaderReal.initialize (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/filecoin-uploader-real.js:40:42)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async Phase1_RegisterAgent.execute (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/workflow-engine/phases/Phase1_RegisterAgent.js:73:5)\n    at async WorkflowEngine.executePhase (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/workflow-engine/WorkflowEngine.js:104:22)\n    at async testPhase1 (file:///var/tmp/vibe-kanban/worktrees/0d79-aiagent/mvp-demo/test-phase1-filecoin.js:46:26)"
+      }
+    },
+    "phase2": {
+      "status": "pending",
+      "result": null
+    },
+    "phase3": {
+      "status": "pending",
+      "result": null
+    },
+    "phase4": {
+      "status": "pending",
+      "result": null
+    },
+    "phase5": {
+      "status": "pending",
+      "result": null
+    },
+    "phase6": {
+      "status": "pending",
+      "result": null
+    },
+    "phase7": {
+      "status": "pending",
+      "result": null
+    }
+  },
+  "userActions": [],
+  "errors": [
+    {
+      "phase": 1,
+      "timestamp": "2025-10-15T15:44:44.758Z",
+      "error": "this.synapse.getAddress is not a function"
+    }
+  ]
+}

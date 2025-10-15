@@ -11,7 +11,7 @@ import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
 import { NFTScanner } from './nft-scanner.js';
-import { FilecoinUploader } from './filecoin-uploader.js';
+import { FilecoinUploaderReal } from './filecoin-uploader-real.js';
 import { ERC8004OfficialClient } from './erc8004-official-client.js';
 
 // Configuration
@@ -137,22 +137,34 @@ function initializeEthers() {
 }
 
 /**
- * Save metadata to file and return URI
+ * Save metadata to file and return Filecoin URI
+ * NEW: Uploads to Filecoin and returns real CID
  */
-function saveMetadata(metadata, filename) {
+async function saveMetadataToFilecoin(metadata, filename, uploader) {
   // Ensure output directory exists
   if (!fs.existsSync(CONFIG.outputDir)) {
     fs.mkdirSync(CONFIG.outputDir, { recursive: true });
   }
 
+  // Save local copy for reference
   const filepath = path.join(CONFIG.outputDir, filename);
   fs.writeFileSync(filepath, JSON.stringify(metadata, null, 2));
+  console.log(`   Saved locally: ${filepath}`);
 
-  console.log(`   Saved: ${filepath}`);
+  try {
+    // Upload to Filecoin and get real CID
+    console.log(`   Uploading ${filename} to Filecoin...`);
+    const uploadResult = await uploader.uploadMetadata(metadata, filename.replace('.json', ''));
 
-  // In production, this would be uploaded to IPFS/Filecoin
-  // For MVP, we'll use a local file:// URI or simulate ipfs://
-  return `file://${path.resolve(filepath)}`;
+    console.log(`   ✅ Uploaded to Filecoin: ${uploadResult.uri}`);
+    console.log(`   Retrieval URL: ${uploadResult.retrievalUrl}`);
+
+    return uploadResult.uri;  // Returns ipfs://{cid} or f://{cid}
+  } catch (error) {
+    console.warn(`   ⚠️  Failed to upload to Filecoin: ${error.message}`);
+    console.warn(`   Falling back to local file URI`);
+    return `file://${path.resolve(filepath)}`;
+  }
 }
 
 /**
@@ -206,8 +218,8 @@ async function main() {
       CONFIG.ipfsGateway
     );
 
-    console.log(`📡 FilecoinUploader: Using Filecoin Calibration network`);
-    const filecoinUploader = new FilecoinUploader(
+    console.log(`📡 FilecoinUploader: Using Filecoin Calibration network (Real Mode)`);
+    const filecoinUploader = new FilecoinUploaderReal(
       CONFIG.privateKey,
       CONFIG.filecoinNetwork.rpcUrl
     );
@@ -235,7 +247,10 @@ async function main() {
       ['nft-scanning', 'ipfs-migration', 'filecoin-storage']
     );
 
-    const agentMetadataURI = saveMetadata(agentMetadata, 'agent-metadata.json');
+    // Initialize Filecoin uploader first
+    await filecoinUploader.initialize();
+
+    const agentMetadataURI = await saveMetadataToFilecoin(agentMetadata, 'agent-metadata.json', filecoinUploader);
 
     const agentRegistration = await erc8004Client.registerAgent(agentMetadataURI);
     const agentId = agentRegistration.agentId;
@@ -278,7 +293,10 @@ async function main() {
       tokens: scanResult.scanResults.results
     };
 
-    saveMetadata(scanReport, 'nft-scan-report.json');
+    // Save scan report locally (not uploaded to chain)
+    const scanReportPath = path.join(CONFIG.outputDir, 'nft-scan-report.json');
+    fs.writeFileSync(scanReportPath, JSON.stringify(scanReport, null, 2));
+    console.log(`   Saved: ${scanReportPath}`);
 
     // ========================================================================
     // PHASE 4: Create ERC-8004 Validation Request
@@ -295,7 +313,8 @@ async function main() {
       uniqueCIDs
     );
 
-    const taskURI = saveMetadata(taskMetadata, 'task-metadata.json');
+    // Upload task metadata to Filecoin
+    const taskURI = await saveMetadataToFilecoin(taskMetadata, 'task-metadata.json', filecoinUploader);
 
     // Use the validator wallet address (separate from agent owner)
     const validatorAddress = validatorSigner.address;
@@ -331,9 +350,11 @@ async function main() {
       2000 // 2 second delay between uploads
     );
 
-    // Save migration results
+    // Save migration results locally
     const migrationReport = filecoinUploader.generateReport();
-    saveMetadata(migrationReport, 'migration-report.json');
+    const migrationReportPath = path.join(CONFIG.outputDir, 'migration-report.json');
+    fs.writeFileSync(migrationReportPath, JSON.stringify(migrationReport, null, 2));
+    console.log(`   Saved: ${migrationReportPath}`);
 
     // ========================================================================
     // PHASE 6: Submit Validation (Proof) to ERC-8004
@@ -348,7 +369,8 @@ async function main() {
       migrationResult.results
     );
 
-    const proofURI = saveMetadata(proofMetadata, 'proof-metadata.json');
+    // Upload proof metadata to Filecoin
+    const proofURI = await saveMetadataToFilecoin(proofMetadata, 'proof-metadata.json', filecoinUploader);
 
     console.log('\n📊 Proof Generated:');
     console.log(`   Proof URI: ${proofURI}`);

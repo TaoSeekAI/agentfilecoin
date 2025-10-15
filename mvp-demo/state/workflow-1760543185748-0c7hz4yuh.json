@@ -1,0 +1,86 @@
+{
+  "workflowId": "workflow-1760543185748-0c7hz4yuh",
+  "createdAt": "2025-10-15T15:46:25.748Z",
+  "updatedAt": "2025-10-15T15:46:36.972Z",
+  "currentPhase": 1,
+  "status": "initialized",
+  "config": {
+    "nftContract": "0xED5AF388653567Af2F388E6224dC7C4b3241C544",
+    "startTokenId": 0,
+    "endTokenId": 4,
+    "validatorAddress": null,
+    "nftNetwork": {
+      "rpcUrl": "https://eth-mainnet.public.blastapi.io",
+      "chainId": "1",
+      "name": "Ethereum Mainnet"
+    },
+    "tokenRange": {
+      "start": 0,
+      "end": 4
+    }
+  },
+  "phases": {
+    "phase1": {
+      "status": "completed",
+      "result": {
+        "agentId": 80,
+        "agentAddress": "0x1D621356Bc9484F5e5858a00103338579Cba9613",
+        "metadataUri": "ipfs://baga6ea4seaqjtovkwk4myyzj56eztkh5pzsk5upksan6f5outesy62bsvl4dsha",
+        "metadata": {
+          "name": "NFT IPFS to Filecoin Migration Agent",
+          "description": "An AI agent that migrates NFT metadata and images from IPFS to Filecoin for permanent storage",
+          "capabilities": {
+            "capabilities": [
+              "nft-scanning",
+              "ipfs-retrieval",
+              "filecoin-upload",
+              "erc8004-validation"
+            ],
+            "version": "1.0.0",
+            "author": "Interactive Workflow System"
+          },
+          "type": "AI Agent",
+          "version": "1.0.0",
+          "createdAt": "2025-10-15T15:46:26.147Z",
+          "owner": "0x1D621356Bc9484F5e5858a00103338579Cba9613"
+        },
+        "txHash": "0x07e541c3a039e0f885568adaa04f4aaa6f768719f6eaee60907bb92599e7cdaf",
+        "network": {
+          "name": "Ethereum Sepolia",
+          "chainId": "11155111",
+          "rpcUrl": "https://eth-sepolia.public.blastapi.io"
+        },
+        "timestamp": "2025-10-15T15:46:36.972Z"
+      },
+      "startedAt": "2025-10-15T15:46:25.749Z",
+      "updatedAt": "2025-10-15T15:46:36.972Z",
+      "completedAt": "2025-10-15T15:46:36.972Z"
+    },
+    "phase2": {
+      "status": "pending",
+      "result": null
+    },
+    "phase3": {
+      "status": "pending",
+      "result": null
+    },
+    "phase4": {
+      "status": "pending",
+      "result": null
+    },
+    "phase5": {
+      "status": "pending",
+      "result": null
+    },
+    "phase6": {
+      "status": "pending",
+      "result": null
+    },
+    "phase7": {
+      "status": "pending",
+      "result": null
+    }
+  },
+  "userActions": [],
+  "errors": []
+}
