@@ -1,407 +1,161 @@
-# NFT IPFS to Filecoin Migration MVP
+# 🚀 NFT IPFS to Filecoin Migration - MVP Demo
 
-Complete MVP demonstration of migrating NFT metadata from IPFS to Filecoin using **Synapse SDK** and **ERC-8004** Agent standard.
+将 NFT 的 IPFS 元数据迁移到 Filecoin 永久存储，并通过 ERC-8004 标准进行 AI Agent 验证。
 
-## 🚀 QUICK START (5 minutes)
+## 📚 快速开始
 
-**Want to run immediately without deploying contracts?** ✅
-
-We've got you covered! Use the pre-deployed ERC-8004 contracts on **Ethereum Sepolia testnet**:
+### 1. 安装依赖
 
 ```bash
-cd mvp-demo
-npm install
-cp .env.example .env
-
-# Edit .env - Only change this line:
-PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
-
-# That's it! All other config is pre-filled:
-# ✅ ERC-8004 contracts (already deployed)
-# ✅ Test NFT contract (existing on Sepolia)
-# ✅ RPC endpoints
-
-# Test your setup:
-npm test
-
-# Run the demo:
-npm run demo
-```
-
-**Get Sepolia ETH**: https://sepoliafaucet.com/ (Need ~0.1 ETH)
-
-**Pre-deployed ERC-8004 Contracts** (same address on 5 testnets):
-- Identity: `0x7177a6867296406881E20d6647232314736Dd09A`
-- Validation: `0x662b40A526cb4017d947e71eAF6753BF3eeE66d8`
-- Reputation: `0xB5048e3ef1DA4E04deB6f7d0423D06F63869e322`
-
-Source: [ChaosChain/trustless-agents-erc-ri](https://github.com/ChaosChain/trustless-agents-erc-ri)
-
-📖 **Detailed guide**: See [QUICKSTART.md](./QUICKSTART.md)
-
----
-
-## 🎯 MVP Goals
-
-1. ✅ Scan small NFT project (10-20 tokens)
-2. ✅ Extract IPFS links from NFT metadata
-3. ✅ Migrate IPFS data to Filecoin using Synapse SDK
-4. ✅ Register agent with ERC-8004
-5. ✅ Record migration work on-chain with validation proof
-6. ✅ Demonstrate ERC-8004 value proposition
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                     demo.js                              │
-│            (Main Orchestration Script)                   │
-└────────────┬───────────────┬─────────────┬──────────────┘
-             │               │             │
-    ┌────────▼──────┐  ┌────▼─────┐  ┌────▼──────────┐
-    │ NFT Scanner   │  │ Filecoin │  │ ERC-8004      │
-    │               │  │ Uploader │  │ Client        │
-    │ - Scan NFTs   │  │          │  │               │
-    │ - Extract CIDs│  │ - Synapse│  │ - Identity    │
-    │               │  │   SDK    │  │ - Validation  │
-    └───────────────┘  └──────────┘  └───────────────┘
-```
-
-## 📋 Prerequisites
-
-### 1. Node.js
-```bash
-node --version  # >= 18.0.0
-```
-
-### 2. Filecoin Calibration Testnet Account
-- Get test FIL: https://faucet.calibration.fildev.network/
-- You'll need ~0.5 FIL for testing
-
-### 3. Deployed ERC-8004 Contracts
-The system requires these contracts deployed on Calibration testnet:
-- `AgentIdentity` - Agent registration
-- `AgentValidation` - Work validation
-
-See the main project's deployment guide for instructions.
-
-### 4. Test NFT Contract
-You can either:
-- Use an existing NFT contract on Calibration testnet
-- Deploy a test NFT contract (see `Test NFT Contract` section below)
-
-## 🚀 Quick Start
-
-### Step 1: Install Dependencies
-
-```bash
-cd mvp-demo
 npm install
 ```
 
-### Step 2: Configure Environment
+### 2. 配置环境
 
-Copy the example environment file:
 ```bash
 cp .env.example .env
+nano .env  # 添加你的私钥
 ```
 
-Edit `.env` with your configuration:
-```bash
-# Network
-RPC_URL=https://api.calibration.node.glif.io/rpc/v1
-CHAIN_ID=314159
+### 3. 获取测试代币
 
-# Your wallet private key (with test FIL)
-PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
+参考 [TESTING_GUIDE.md](./TESTING_GUIDE.md) 获取：
+- Sepolia ETH
+- Calibration FIL  
+- USDFC（重要！）
 
-# ERC-8004 Contract addresses (from deployment)
-AGENT_IDENTITY_ADDRESS=0x...
-AGENT_VALIDATION_ADDRESS=0x...
-
-# NFT contract to scan
-NFT_CONTRACT_ADDRESS=0x...
-NFT_START_TOKEN_ID=1
-NFT_END_TOKEN_ID=10
-
-# IPFS Gateway
-IPFS_GATEWAY=https://ipfs.io/ipfs/
-
-# Proxy (if needed)
-HTTP_PROXY=http://Clash:sNHwynoj@192.168.10.1:7890
-HTTPS_PROXY=http://Clash:sNHwynoj@192.168.10.1:7890
-```
-
-### Step 3: Run the Demo
+### 4. 设置授权
 
 ```bash
-npm run demo
+# 自动设置所有授权
+node setup-via-sdk.js
+
+# 验证授权状态
+node verify-approvals.js
 ```
 
-## 📖 What the Demo Does
+### 5. 运行测试
 
-The demo executes a complete 8-phase workflow:
-
-### **Phase 1: Initialize Clients**
-- Initialize NFT Scanner
-- Initialize Filecoin Uploader (Synapse SDK)
-- Initialize ERC-8004 Client
-
-### **Phase 2: Register ERC-8004 Agent**
-- Create agent metadata
-- Register agent on-chain
-- Receive Agent ID
-
-### **Phase 3: Scan NFT Project**
-- Detect contract type (ERC-721/ERC-1155)
-- Scan tokens in specified range
-- Extract IPFS CIDs from metadata and images
-- Generate scan report
-
-### **Phase 4: Create Validation Request**
-- Generate task metadata (migration task description)
-- Create on-chain validation request
-- Receive Request ID
-
-### **Phase 5: Migrate to Filecoin**
-- Download each IPFS CID
-- Upload to Filecoin using Synapse SDK
-- Record Piece CID and CAR CID
-- Generate migration report
-
-### **Phase 6: Submit Proof**
-- Generate proof metadata (migration results)
-- Submit proof on-chain
-- Link proof to validation request
-
-### **Phase 7: Approve Validation**
-- Approve the validation request (self-validation for MVP)
-- Mark work as verified on-chain
-
-### **Phase 8: Generate Final Report**
-- Query final agent state
-- Query validation state
-- Generate comprehensive final report
-- Save all outputs
-
-## 📊 Output Files
-
-After running the demo, you'll find these files in `./output/`:
-
-1. **agent-metadata.json** - Agent registration metadata
-2. **task-metadata.json** - Migration task description
-3. **proof-metadata.json** - Proof of completed work
-4. **nft-scan-report.json** - NFT scanning results
-5. **migration-report.json** - Filecoin migration details
-6. **final-report.json** - Complete summary with all transaction hashes
-
-Downloaded IPFS files are saved to `./downloads/`
-
-## 🎓 Understanding the Code
-
-### nft-scanner.js
-Handles NFT contract interaction:
-- Supports ERC-721 and ERC-1155
-- Extracts IPFS CIDs from various URI formats
-- Fetches and parses metadata
-- Identifies unique CIDs
-
-```javascript
-const scanner = new NFTScanner(contractAddress, provider, ipfsGateway);
-const result = await scanner.scan(startTokenId, endTokenId);
-```
-
-### filecoin-uploader.js
-Manages Filecoin storage via Synapse SDK:
-- Downloads from IPFS
-- Uploads to Filecoin with callbacks
-- Tracks Piece CIDs and CAR CIDs
-- Batch migration support
-
-```javascript
-const uploader = new FilecoinUploader(privateKey, rpcUrl);
-await uploader.initialize();
-const result = await uploader.migrateIPFSToFilecoin(ipfsCid);
-```
-
-**Key Pattern** (from synapse-sdk E2E example):
-```javascript
-// Create storage context
-const storageContext = await synapse.storage.createContext({
-  withCDN: false,
-  callbacks: { onProviderSelected, onDataSetResolved }
-});
-
-// Upload with callbacks
-await storageContext.upload(data, {
-  onUploadComplete: (cid) => { pieceCid = cid; },
-  onPieceAdded: (tx) => { carCid = tx.carCid; }
-});
-```
-
-### erc8004-client.js
-Interacts with ERC-8004 contracts:
-- Agent registration
-- Validation request creation
-- Proof submission
-- Validation approval
-
-```javascript
-const client = new ERC8004Client(provider, signer, identityAddr, validationAddr);
-const agentId = await client.registerAgent(metadataURI);
-const requestId = await client.createValidationRequest(agentId, taskURI);
-await client.submitProof(requestId, proofURI);
-await client.approveValidation(requestId);
-```
-
-### demo.js
-Main orchestration script that ties everything together in 8 phases.
-
-## 🧪 Test NFT Contract
-
-If you need a test NFT contract, deploy this simple ERC-721:
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
-
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-contract TestNFT is ERC721URIStorage, Ownable {
-    uint256 private _tokenIdCounter;
-
-    constructor() ERC721("TestNFT", "TNFT") Ownable(msg.sender) {}
-
-    function mint(address to, string memory uri) public onlyOwner {
-        uint256 tokenId = _tokenIdCounter++;
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
-    }
-
-    function batchMint(string[] memory uris) public onlyOwner {
-        for (uint256 i = 0; i < uris.length; i++) {
-            mint(msg.sender, uris[i]);
-        }
-    }
-}
-```
-
-Example token URIs with IPFS:
-```javascript
-[
-  "ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-  "ipfs://QmPAg1mjxcEQPPtqsLoEcauVedaeMH81WXDPvPx3VC5zUz",
-  // ... add more
-]
-```
-
-## 💡 ERC-8004 Value Proposition
-
-This demo demonstrates how ERC-8004 provides value for AI agents:
-
-### 1. **Decentralized Identity**
-- Agent registered on-chain with immutable ID
-- Anyone can verify agent ownership and metadata
-- No centralized registry required
-
-### 2. **Work Validation**
-- Migration task recorded on-chain
-- Proof of work submitted and verified
-- Immutable audit trail
-
-### 3. **Trust Layer**
-- Other agents can query validation status
-- Composable trust - agents can build on verified work
-- Reputation can be built over multiple tasks
-
-### 4. **Interoperability**
-- Standard interface (ERC-8004)
-- Any agent can verify any other agent's work
-- Cross-agent collaboration enabled
-
-## 🔍 Verification
-
-After running the demo, you can verify on-chain:
-
-### View Agent Registration
 ```bash
-cast call $AGENT_IDENTITY_ADDRESS \
-  "getAgent(uint256)(address,string,uint256,bool)" \
-  $AGENT_ID \
-  --rpc-url $RPC_URL
+# 前置检查
+node pre-upload-check.js
+
+# 测试上传
+node test-real-upload-small.js
+
+# 完整演示
+node demo.js
 ```
 
-### View Validation Request
+## 📖 完整文档
+
+- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** - 详细的测试指南
+- **[CURRENT_STATUS.md](./CURRENT_STATUS.md)** - 当前项目状态
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - 系统架构说明
+
+## 🎯 主要功能
+
+1. **NFT 扫描** - 从 Ethereum 主网扫描 NFT
+2. **Agent 注册** - 在 ERC-8004 标准上注册 AI Agent
+3. **Filecoin 存储** - 将元数据上传到 Filecoin
+4. **验证证明** - 生成并提交验证证明
+5. **报告生成** - 导出完整的迁移报告
+
+## 🔧 可用脚本
+
+### 设置和准备
+- `generate-new-wallet.js` - 生成新钱包
+- `check-balances.js` - 检查所有余额
+- `setup-via-sdk.js` - 设置授权（推荐）
+- `verify-approvals.js` - 验证授权状态
+- `pre-upload-check.js` - 上传前置检查
+
+### 测试脚本
+- `test-real-upload-small.js` - 上传测试（1.1 MB）
+- `demo.js` - 完整流程演示（一次性）
+- `interactive-workflow.js` - 交互式工作流
+
+### 工具脚本
+- `get-real-addresses.js` - 获取合约地址
+- `transfer-eth-auto.js` - 转账 ETH
+- `transfer-fil-auto.js` - 转账 FIL
+
+## ⚠️  重要提示
+
+### 必读！
+
+1. **必须先设置授权**
+   ```bash
+   node setup-via-sdk.js
+   ```
+   否则会遇到错误码 33！
+
+2. **USDFC 是必需的**
+   - 用于支付 Filecoin 存储费用
+   - 至少需要 50 USDFC
+   - 参考测试指南获取
+
+3. **文件大小要求**
+   - Storage Provider 最小要求：1 MB
+   - 测试脚本已自动处理
+
+4. **Storage Provider 可能超时**
+   - 这不是你的问题！
+   - 测试网 SP 有时会很慢
+   - 稍后重试即可
+
+## 🐛 故障排查
+
+### 错误码 33
 ```bash
-cast call $AGENT_VALIDATION_ADDRESS \
-  "getValidationRequest(uint256)(uint256,address,string,string,uint8,uint256)" \
-  $REQUEST_ID \
-  --rpc-url $RPC_URL
+# 解决方案：重新设置授权
+node setup-via-sdk.js
+node verify-approvals.js
 ```
 
-### View on Block Explorer
-Visit: https://calibration.filscan.io/
-Search for transaction hashes from the output.
-
-## 🛠️ Troubleshooting
-
-### "Insufficient balance"
-Get test FIL: https://faucet.calibration.fildev.network/
-
-### "Cannot connect to IPFS gateway"
-- Check your proxy settings
-- Try alternative gateway: `https://cloudflare-ipfs.com/ipfs/`
-
-### "Contract not deployed"
-Ensure you've deployed the ERC-8004 contracts and updated `.env`
-
-### "Token does not exist"
-- Check the NFT contract has minted tokens
-- Adjust `NFT_START_TOKEN_ID` and `NFT_END_TOKEN_ID`
-
-### Network issues (China/restricted regions)
-Configure proxy in `.env`:
+### SP 超时
 ```bash
-HTTP_PROXY=http://your-proxy:port
-HTTPS_PROXY=http://your-proxy:port
+# 这是 SP 的问题，等待后重试
+# 所有其他步骤成功即表示你的代码正确
 ```
 
-## 📚 Additional Resources
-
-- **ERC-8004 Specification**: https://eips.ethereum.org/EIPS/eip-8004
-- **Synapse SDK**: https://github.com/FilOzone/synapse-sdk
-- **Synapse SDK E2E Example**: https://github.com/FilOzone/synapse-sdk/blob/master/utils/example-storage-e2e.js
-- **Filecoin Calibration Testnet**: https://docs.filecoin.io/networks/calibration/
-- **Filecoin Faucet**: https://faucet.calibration.fildev.network/
-- **Block Explorer**: https://calibration.filscan.io/
-
-## 🤝 Integration with Main Project
-
-This MVP is part of the larger ERC-8004 + Filecoin Agent system:
-
-```
-aiagent/
-├── contracts/          # ERC-8004 Solidity contracts
-├── backend/           # Rust backend (full implementation)
-├── mvp-demo/          # This MVP (Node.js)
-└── docs/              # Documentation
+### 网络问题
+```bash
+# 检查网络连接
+curl https://api.calibration.node.glif.io/rpc/v1
 ```
 
-The MVP demonstrates the core concepts in a simple, understandable way. For production use, refer to the main backend implementation.
+完整故障排查指南：[TESTING_GUIDE.md#故障排查](./TESTING_GUIDE.md#故障排查)
 
-## 📝 License
+## 📊 项目状态
 
-MIT
+✅ **完成的功能**:
+- SDK 升级到 v0.33.0（真实实现）
+- 完整的授权流程
+- Data Set 创建
+- 上传测试
+- 完整工作流
 
-## 👥 Contributing
+⚠️  **已知问题**:
+- Storage Provider 有时响应慢（测试网问题）
+- 需要手动获取 USDFC（水龙头有限）
 
-This is a demo project. For contributions to the main project, see the root README.
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📞 获取帮助
+
+- **Filecoin Slack**: https://filecoin.io/slack
+- **Filecoin Discord**: https://discord.gg/filecoin
+- **项目 Issues**: (你的 GitHub Issues 链接)
+
+## 📄 许可证
+
+MIT License
 
 ---
 
-**Need Help?**
-- Check the troubleshooting section above
-- Review the code comments in each module
-- Examine the output JSON files for debugging
-- Check transaction status on block explorer
+**开始测试**: 阅读 [TESTING_GUIDE.md](./TESTING_GUIDE.md) 📖
+
+**查看状态**: 查看 [CURRENT_STATUS.md](./CURRENT_STATUS.md) 📊
