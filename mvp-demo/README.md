@@ -2,6 +2,45 @@
 
 Complete MVP demonstration of migrating NFT metadata from IPFS to Filecoin using **Synapse SDK** and **ERC-8004** Agent standard.
 
+## 🚀 QUICK START (5 minutes)
+
+**Want to run immediately without deploying contracts?** ✅
+
+We've got you covered! Use the pre-deployed ERC-8004 contracts on **Ethereum Sepolia testnet**:
+
+```bash
+cd mvp-demo
+npm install
+cp .env.example .env
+
+# Edit .env - Only change this line:
+PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
+
+# That's it! All other config is pre-filled:
+# ✅ ERC-8004 contracts (already deployed)
+# ✅ Test NFT contract (existing on Sepolia)
+# ✅ RPC endpoints
+
+# Test your setup:
+npm test
+
+# Run the demo:
+npm run demo
+```
+
+**Get Sepolia ETH**: https://sepoliafaucet.com/ (Need ~0.1 ETH)
+
+**Pre-deployed ERC-8004 Contracts** (same address on 5 testnets):
+- Identity: `0x7177a6867296406881E20d6647232314736Dd09A`
+- Validation: `0x662b40A526cb4017d947e71eAF6753BF3eeE66d8`
+- Reputation: `0xB5048e3ef1DA4E04deB6f7d0423D06F63869e322`
+
+Source: [ChaosChain/trustless-agents-erc-ri](https://github.com/ChaosChain/trustless-agents-erc-ri)
+
+📖 **Detailed guide**: See [QUICKSTART.md](./QUICKSTART.md)
+
+---
+
 ## 🎯 MVP Goals
 
 1. ✅ Scan small NFT project (10-20 tokens)

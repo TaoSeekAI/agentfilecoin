@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "demo": "node demo.js",
-    "test": "node demo.js --test-mode"
+    "test": "node test-setup.js",
+    "test:demo": "node demo.js --test-mode"
   },
   "keywords": [
     "NFT",

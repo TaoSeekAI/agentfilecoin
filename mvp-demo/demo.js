@@ -130,11 +130,23 @@ async function main() {
     // Check balance
     console.log('\n💰 Checking Balance...');
     const balance = await provider.getBalance(signer.address);
-    console.log(`   Balance: ${ethers.formatEther(balance)} FIL`);
 
-    if (balance < ethers.parseEther('0.1')) {
-      console.warn('\n⚠️  Warning: Low balance. Get test FIL from:');
-      console.warn('   https://faucet.calibration.fildev.network/');
+    // Determine network name and currency
+    const networkInfo = {
+      11155111: { name: 'Sepolia', currency: 'ETH', faucet: 'https://sepoliafaucet.com/' },
+      314159: { name: 'Calibration', currency: 'FIL', faucet: 'https://faucet.calibration.fildev.network/' },
+      84532: { name: 'Base Sepolia', currency: 'ETH', faucet: 'https://docs.base.org/tools/network-faucets' },
+      11155420: { name: 'Optimism Sepolia', currency: 'ETH', faucet: 'https://app.optimism.io/faucet' }
+    };
+
+    const network = networkInfo[CONFIG.chainId] || { name: 'Unknown', currency: 'ETH', faucet: 'N/A' };
+
+    console.log(`   Network: ${network.name}`);
+    console.log(`   Balance: ${ethers.formatEther(balance)} ${network.currency}`);
+
+    if (balance < ethers.parseEther('0.01')) {
+      console.warn(`\n⚠️  Warning: Low balance. Get test ${network.currency} from:`);
+      console.warn(`   ${network.faucet}`);
     }
 
     // ========================================================================
