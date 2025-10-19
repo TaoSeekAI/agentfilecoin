@@ -270,7 +270,8 @@ class NFTMigrationDaemon {
                 activeSessions: this.sessions.size,
                 env: {
                     walletAddress: process.env.WALLET_ADDRESS || 'Not configured',
-                    ethereumRpc: process.env.ETHEREUM_NETWORK_RPC_URL ? 'Configured' : 'Not configured',
+                    nftNetworkRpc: process.env.NFT_NETWORK_RPC_URL ? 'Configured' : 'Not configured',
+                    validationNetworkRpc: process.env.VALIDATION_NETWORK_RPC_URL ? 'Configured' : 'Not configured',
                     filecoinRpc: process.env.FILECOIN_NETWORK_RPC_URL ? 'Configured' : 'Not configured',
                 },
             });

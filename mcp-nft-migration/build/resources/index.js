@@ -147,15 +147,35 @@ export const resourceProviders = {
     async getEnvironment() {
         return {
             ethereum: {
-                mainnet_rpc: process.env.ETHEREUM_MAINNET_RPC_URL || 'N/A',
-                sepolia_rpc: process.env.ETHEREUM_NETWORK_RPC_URL || 'N/A',
+                mainnet_rpc: process.env.NFT_NETWORK_RPC_URL || 'N/A',
+                mainnet_chain_id: process.env.NFT_NETWORK_CHAIN_ID || 'N/A',
+                mainnet_name: process.env.NFT_NETWORK_NAME || 'N/A',
+                sepolia_rpc: process.env.VALIDATION_NETWORK_RPC_URL || 'N/A',
+                sepolia_chain_id: process.env.VALIDATION_NETWORK_CHAIN_ID || 'N/A',
+                sepolia_name: process.env.VALIDATION_NETWORK_NAME || 'N/A',
             },
             filecoin: {
                 calibration_rpc: process.env.FILECOIN_NETWORK_RPC_URL || 'N/A',
+                calibration_chain_id: process.env.FILECOIN_NETWORK_CHAIN_ID || 'N/A',
+                calibration_name: process.env.FILECOIN_NETWORK_NAME || 'N/A',
             },
             wallet: {
                 address: process.env.WALLET_ADDRESS || 'N/A',
                 hasPrivateKey: !!process.env.PRIVATE_KEY,
+                hasValidatorKey: !!process.env.VALIDATOR_PRIVATE_KEY,
+            },
+            contracts: {
+                nft: process.env.NFT_CONTRACT_ADDRESS || 'N/A',
+                agent_identity: process.env.AGENT_IDENTITY_ADDRESS || 'N/A',
+                agent_reputation: process.env.AGENT_REPUTATION_ADDRESS || 'N/A',
+                agent_validation: process.env.AGENT_VALIDATION_ADDRESS || 'N/A',
+            },
+            ipfs: {
+                gateway: process.env.IPFS_GATEWAY || 'N/A',
+            },
+            proxy: {
+                http: process.env.HTTP_PROXY ? 'Configured' : 'Not configured',
+                https: process.env.HTTPS_PROXY ? 'Configured' : 'Not configured',
             },
             lastUpdated: new Date().toISOString(),
         };
