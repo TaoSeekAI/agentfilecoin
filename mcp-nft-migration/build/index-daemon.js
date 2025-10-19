@@ -187,6 +187,48 @@ class NFTMigrationDaemon {
         app.get('/message', handleMcpRequest);
         app.post('/message', handleMcpRequest);
         app.delete('/message', handleMcpRequest);
+        // OAuth Discovery endpoint - Mock for Claude Code compatibility
+        // Returns minimal OAuth metadata to satisfy Claude Code's discovery process
+        app.get('/.well-known/openid-configuration', (req, res) => {
+            console.log('OAuth discovery request (mock)');
+            res.json({
+                issuer: `http://${HOST}:${PORT}`,
+                authorization_endpoint: `http://${HOST}:${PORT}/authorize`,
+                token_endpoint: `http://${HOST}:${PORT}/token`,
+                registration_endpoint: `http://${HOST}:${PORT}/register`,
+                response_types_supported: ['code'],
+                grant_types_supported: ['authorization_code'],
+                code_challenge_methods_supported: ['S256'],
+            });
+        });
+        // OAuth Registration endpoint - Mock (no-op, returns success)
+        app.post('/register', (req, res) => {
+            console.log('OAuth registration request (mock - no auth required)');
+            res.json({
+                client_id: 'mock-client-id',
+                client_secret: 'mock-client-secret',
+                registration_access_token: 'mock-token',
+                registration_client_uri: `http://${HOST}:${PORT}/register/mock-client-id`,
+            });
+        });
+        // OAuth Authorization endpoint - Mock (redirect immediately)
+        app.get('/authorize', (req, res) => {
+            console.log('OAuth authorize request (mock - auto-approve)');
+            const redirectUri = req.query.redirect_uri || 'http://localhost';
+            const state = req.query.state || '';
+            const code = 'mock-auth-code';
+            res.redirect(`${redirectUri}?code=${code}&state=${state}`);
+        });
+        // OAuth Token endpoint - Mock (return dummy token)
+        app.post('/token', (req, res) => {
+            console.log('OAuth token request (mock - return dummy token)');
+            res.json({
+                access_token: 'mock-access-token',
+                token_type: 'Bearer',
+                expires_in: 3600,
+                refresh_token: 'mock-refresh-token',
+            });
+        });
         // Health check endpoint
         app.get('/health', (req, res) => {
             res.json({
