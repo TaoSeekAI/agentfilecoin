@@ -233,12 +233,24 @@ class NFTMigrationDaemon {
     });
 
     // OAuth Registration endpoint - Mock (no-op, returns success)
+    // Follows RFC 7591 - OAuth 2.0 Dynamic Client Registration Protocol
     app.post('/register', (req: Request, res: Response) => {
       console.log('OAuth registration request (mock - no auth required)');
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+
+      // Extract redirect_uris from request or use default
+      const redirectUris = req.body?.redirect_uris || ['http://localhost'];
+
       res.json({
         client_id: 'mock-client-id',
         client_secret: 'mock-client-secret',
-        registration_access_token: 'mock-token',
+        client_id_issued_at: Math.floor(Date.now() / 1000),
+        client_secret_expires_at: 0, // Never expires
+        redirect_uris: redirectUris,
+        grant_types: ['authorization_code', 'refresh_token'],
+        response_types: ['code'],
+        token_endpoint_auth_method: 'client_secret_basic',
+        registration_access_token: 'mock-registration-token',
         registration_client_uri: `http://${HOST}:${PORT}/register/mock-client-id`,
       });
     });
