@@ -2,7 +2,7 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import {
   CallToolRequestSchema,
   ListResourcesRequestSchema,
@@ -27,6 +27,7 @@ import { promptTemplates } from './prompts/index.js';
 class NFTMigrationDaemon {
   private server: Server;
   private startTime: number;
+  private transports: Map<string, SSEServerTransport> = new Map();
 
   constructor() {
     this.server = new Server(
@@ -152,9 +153,10 @@ class NFTMigrationDaemon {
 
   async run(): Promise<void> {
     const app = express();
+    app.use(express.json());
 
     // CORS middleware for Claude Code Desktop
-    app.use((req, res, next) => {
+    app.use((req: Request, res: Response, next: NextFunction) => {
       res.header('Access-Control-Allow-Origin', '*');
       res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -165,28 +167,70 @@ class NFTMigrationDaemon {
     });
 
     // Request logging
-    app.use((req, res, next) => {
+    app.use((req: Request, res: Response, next: NextFunction) => {
       const timestamp = new Date().toISOString();
       console.log(`[${timestamp}] ${req.method} ${req.url}`);
       next();
     });
 
-    // SSE endpoint for MCP communication
-    const transport = new SSEServerTransport('/message', app);
-    await this.server.connect(transport);
+    // SSE endpoint - establish connection
+    app.get('/message', async (req: Request, res: Response) => {
+      console.log('New SSE connection request');
+
+      // Create transport for this connection
+      const transport = new SSEServerTransport('/message', res as any);
+      await this.server.connect(transport);
+
+      // Store transport
+      const sessionId = transport.sessionId;
+      this.transports.set(sessionId, transport);
+      console.log(`SSE connection established: ${sessionId}`);
+
+      // Clean up on close
+      res.on('close', () => {
+        console.log(`SSE connection closed: ${sessionId}`);
+        this.transports.delete(sessionId);
+      });
+
+      // Start SSE stream
+      await transport.start();
+    });
+
+    // POST endpoint - receive messages
+    app.post('/message', async (req: Request, res: Response) => {
+      const sessionId = req.query.sessionId as string;
+      console.log(`Received POST message for session: ${sessionId}`);
+
+      if (!sessionId) {
+        return res.status(400).json({ error: 'Missing sessionId' });
+      }
+
+      const transport = this.transports.get(sessionId);
+      if (!transport) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+
+      try {
+        await transport.handlePostMessage(req as any, res as any);
+      } catch (error: any) {
+        console.error('Error handling POST message:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
 
     // Health check endpoint
-    app.get('/health', (req, res) => {
+    app.get('/health', (req: Request, res: Response) => {
       res.json({
         status: 'ok',
         timestamp: Date.now(),
         uptime: Math.floor((Date.now() - this.startTime) / 1000),
         pid: process.pid,
+        activeSessions: this.transports.size,
       });
     });
 
     // Info endpoint
-    app.get('/info', (req, res) => {
+    app.get('/info', (req: Request, res: Response) => {
       res.json({
         name: 'mcp-nft-migration-daemon',
         version: '1.0.0',
@@ -197,6 +241,7 @@ class NFTMigrationDaemon {
         pid: process.pid,
         nodeVersion: process.version,
         platform: process.platform,
+        activeSessions: this.transports.size,
         env: {
           walletAddress: process.env.WALLET_ADDRESS || 'Not configured',
           ethereumRpc: process.env.ETHEREUM_NETWORK_RPC_URL ? 'Configured' : 'Not configured',
@@ -206,21 +251,22 @@ class NFTMigrationDaemon {
     });
 
     // Root endpoint
-    app.get('/', (req, res) => {
+    app.get('/', (req: Request, res: Response) => {
       res.json({
         name: 'MCP NFT Migration Daemon',
         version: '1.0.0',
         endpoints: {
           health: '/health',
           info: '/info',
-          sse: '/message',
+          sse: 'GET /message',
+          post: 'POST /message?sessionId={sessionId}',
         },
         docs: 'https://github.com/TaoSeekAI/agentfilecoin',
       });
     });
 
     // Error handling
-    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
       console.error('Express error:', err);
       res.status(500).json({
         error: 'Internal server error',
@@ -238,7 +284,8 @@ class NFTMigrationDaemon {
       console.log('═══════════════════════════════════════════════════════════════');
       console.log(`  Mode:          Daemon (HTTP/SSE)`);
       console.log(`  URL:           http://${HOST}:${PORT}`);
-      console.log(`  SSE Endpoint:  http://${HOST}:${PORT}/message`);
+      console.log(`  SSE Endpoint:  GET http://${HOST}:${PORT}/message`);
+      console.log(`  POST Endpoint: POST http://${HOST}:${PORT}/message?sessionId={id}`);
       console.log(`  Health Check:  http://${HOST}:${PORT}/health`);
       console.log(`  Info:          http://${HOST}:${PORT}/info`);
       console.log(`  PID:           ${process.pid}`);
