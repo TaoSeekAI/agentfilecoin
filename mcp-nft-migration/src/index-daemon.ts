@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express, { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'node:crypto';
 import {
   CallToolRequestSchema,
   ListResourcesRequestSchema,
@@ -22,12 +23,12 @@ import { promptTemplates } from './prompts/index.js';
  * MCP Server Daemon for NFT IPFS to Filecoin Migration
  *
  * Runs as a standalone daemon process, independent of Claude Code Desktop.
- * Uses HTTP/SSE transport for client connections.
+ * Uses Streamable HTTP transport (MCP spec 2025-03-26) for client connections.
  */
 class NFTMigrationDaemon {
   private server: Server;
   private startTime: number;
-  private transports: Map<string, SSEServerTransport> = new Map();
+  private sessions: Map<string, StreamableHTTPServerTransport> = new Map();
 
   constructor() {
     this.server = new Server(
@@ -155,11 +156,11 @@ class NFTMigrationDaemon {
     const app = express();
     app.use(express.json());
 
-    // CORS middleware for Claude Code Desktop
+    // CORS middleware
     app.use((req: Request, res: Response, next: NextFunction) => {
       res.header('Access-Control-Allow-Origin', '*');
-      res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id, Last-Event-Id');
       if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
       }
@@ -173,50 +174,48 @@ class NFTMigrationDaemon {
       next();
     });
 
-    // SSE endpoint - establish connection
-    app.get('/message', async (req: Request, res: Response) => {
-      console.log('New SSE connection request');
+    // MCP endpoint - Streamable HTTP transport
+    // Handles both GET (for SSE stream) and POST (for JSON-RPC requests)
+    const handleMcpRequest = async (req: Request, res: Response) => {
+      console.log(`MCP ${req.method} request`);
 
-      // Create transport for this connection
-      const transport = new SSEServerTransport('/message', res as any);
-      await this.server.connect(transport);
-
-      // Store transport
-      const sessionId = transport.sessionId;
-      this.transports.set(sessionId, transport);
-      console.log(`SSE connection established: ${sessionId}`);
-
-      // Clean up on close
-      res.on('close', () => {
-        console.log(`SSE connection closed: ${sessionId}`);
-        this.transports.delete(sessionId);
+      // Create new transport for each request
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        onsessioninitialized: async (sessionId: string) => {
+          console.log(`Session initialized: ${sessionId}`);
+          this.sessions.set(sessionId, transport);
+        },
+        onsessionclosed: async (sessionId: string) => {
+          console.log(`Session closed: ${sessionId}`);
+          this.sessions.delete(sessionId);
+        },
+        enableDnsRebindingProtection: false,
       });
 
-      // Start SSE stream
-      await transport.start();
-    });
+      // Connect server to transport
+      await this.server.connect(transport);
 
-    // POST endpoint - receive messages
-    app.post('/message', async (req: Request, res: Response) => {
-      const sessionId = req.query.sessionId as string;
-      console.log(`Received POST message for session: ${sessionId}`);
-
-      if (!sessionId) {
-        return res.status(400).json({ error: 'Missing sessionId' });
-      }
-
-      const transport = this.transports.get(sessionId);
-      if (!transport) {
-        return res.status(404).json({ error: 'Session not found' });
-      }
-
+      // Handle the HTTP request
       try {
-        await transport.handlePostMessage(req as any, res as any);
+        await transport.handleRequest(req as any, res as any, req.body);
       } catch (error: any) {
-        console.error('Error handling POST message:', error);
-        res.status(500).json({ error: error.message });
+        console.error('Error handling MCP request:', error);
+        if (!res.headersSent) {
+          res.status(500).json({ error: error.message });
+        }
       }
-    });
+    };
+
+    // MCP endpoints (following spec: single endpoint supports GET and POST)
+    app.get('/mcp', handleMcpRequest);
+    app.post('/mcp', handleMcpRequest);
+    app.delete('/mcp', handleMcpRequest);
+
+    // Also support /message for backwards compatibility
+    app.get('/message', handleMcpRequest);
+    app.post('/message', handleMcpRequest);
+    app.delete('/message', handleMcpRequest);
 
     // Health check endpoint
     app.get('/health', (req: Request, res: Response) => {
@@ -225,7 +224,7 @@ class NFTMigrationDaemon {
         timestamp: Date.now(),
         uptime: Math.floor((Date.now() - this.startTime) / 1000),
         pid: process.pid,
-        activeSessions: this.transports.size,
+        activeSessions: this.sessions.size,
       });
     });
 
@@ -235,13 +234,14 @@ class NFTMigrationDaemon {
         name: 'mcp-nft-migration-daemon',
         version: '1.0.0',
         mode: 'daemon',
-        transport: 'SSE',
+        transport: 'Streamable HTTP',
+        protocol: '2025-03-26',
         startTime: this.startTime,
         uptime: Math.floor((Date.now() - this.startTime) / 1000),
         pid: process.pid,
         nodeVersion: process.version,
         platform: process.platform,
-        activeSessions: this.transports.size,
+        activeSessions: this.sessions.size,
         env: {
           walletAddress: process.env.WALLET_ADDRESS || 'Not configured',
           ethereumRpc: process.env.ETHEREUM_NETWORK_RPC_URL ? 'Configured' : 'Not configured',
@@ -255,11 +255,12 @@ class NFTMigrationDaemon {
       res.json({
         name: 'MCP NFT Migration Daemon',
         version: '1.0.0',
+        transport: 'Streamable HTTP (MCP 2025-03-26)',
         endpoints: {
           health: '/health',
           info: '/info',
-          sse: 'GET /message',
-          post: 'POST /message?sessionId={sessionId}',
+          mcp: '/mcp (GET, POST, DELETE)',
+          message: '/message (GET, POST, DELETE) - legacy',
         },
         docs: 'https://github.com/TaoSeekAI/agentfilecoin',
       });
@@ -282,10 +283,10 @@ class NFTMigrationDaemon {
       console.log('═══════════════════════════════════════════════════════════════');
       console.log('  MCP NFT Migration Daemon Started');
       console.log('═══════════════════════════════════════════════════════════════');
-      console.log(`  Mode:          Daemon (HTTP/SSE)`);
+      console.log(`  Mode:          Daemon (Streamable HTTP)`);
+      console.log(`  Protocol:      MCP 2025-03-26`);
       console.log(`  URL:           http://${HOST}:${PORT}`);
-      console.log(`  SSE Endpoint:  GET http://${HOST}:${PORT}/message`);
-      console.log(`  POST Endpoint: POST http://${HOST}:${PORT}/message?sessionId={id}`);
+      console.log(`  MCP Endpoint:  http://${HOST}:${PORT}/mcp`);
       console.log(`  Health Check:  http://${HOST}:${PORT}/health`);
       console.log(`  Info:          http://${HOST}:${PORT}/info`);
       console.log(`  PID:           ${process.pid}`);
@@ -296,7 +297,8 @@ class NFTMigrationDaemon {
       console.log(`  {`);
       console.log(`    "mcpServers": {`);
       console.log(`      "nft-migration": {`);
-      console.log(`        "url": "http://${HOST}:${PORT}/message"`);
+      console.log(`        "type": "http",`);
+      console.log(`        "url": "http://${HOST}:${PORT}/mcp"`);
       console.log(`      }`);
       console.log(`    }`);
       console.log(`  }`);
