@@ -187,18 +187,22 @@ class NFTMigrationDaemon {
         app.get('/message', handleMcpRequest);
         app.post('/message', handleMcpRequest);
         app.delete('/message', handleMcpRequest);
-        // OAuth Discovery endpoint - Mock for Claude Code compatibility
-        // Returns minimal OAuth metadata to satisfy Claude Code's discovery process
+        // OAuth Discovery endpoint - Returns "no auth required" configuration
+        // This tells Claude Code that authentication is optional/not required
         app.get('/.well-known/openid-configuration', (req, res) => {
-            console.log('OAuth discovery request (mock)');
+            console.log('OAuth discovery request - returning no-auth-required config');
+            // Option 1: Return minimal config suggesting no auth needed
+            // Some clients interpret empty grant_types as "no auth required"
             res.json({
                 issuer: `http://${HOST}:${PORT}`,
                 authorization_endpoint: `http://${HOST}:${PORT}/authorize`,
                 token_endpoint: `http://${HOST}:${PORT}/token`,
                 registration_endpoint: `http://${HOST}:${PORT}/register`,
                 response_types_supported: ['code'],
-                grant_types_supported: ['authorization_code'],
+                grant_types_supported: ['authorization_code', 'client_credentials'],
                 code_challenge_methods_supported: ['S256'],
+                // Indicate that authentication is optional
+                token_endpoint_auth_methods_supported: ['none'],
             });
         });
         // OAuth Registration endpoint - Mock (no-op, returns success)
@@ -214,9 +218,10 @@ class NFTMigrationDaemon {
                 client_id_issued_at: Math.floor(Date.now() / 1000),
                 client_secret_expires_at: 0, // Never expires
                 redirect_uris: redirectUris,
-                grant_types: ['authorization_code', 'refresh_token'],
+                grant_types: ['authorization_code', 'refresh_token', 'client_credentials'],
                 response_types: ['code'],
-                token_endpoint_auth_method: 'client_secret_basic',
+                // Set to 'none' to indicate no authentication required
+                token_endpoint_auth_method: 'none',
                 registration_access_token: 'mock-registration-token',
                 registration_client_uri: `http://${HOST}:${PORT}/register/mock-client-id`,
             });
