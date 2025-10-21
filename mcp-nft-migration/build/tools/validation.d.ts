@@ -14,15 +14,35 @@ export declare const validationTools: {
     getToolDefinitions(): ToolDefinition[];
     hasHandler(toolName: string): boolean;
     handleTool(toolName: string, args: any): Promise<any>;
-    erc8004Validate(args: {
-        piece_cid: string;
-        token_id: string;
-        contract_address: string;
+    registerAgent(args: {
+        name: string;
+        description: string;
+        capabilities?: string[];
     }): Promise<any>;
-    updateContractUri(args: {
-        contract_address: string;
-        token_id: string;
-        new_uri: string;
+    getAgentInfo(args: {
+        agent_id: string;
+    }): Promise<any>;
+    createValidationRequest(args: {
+        agent_id: string;
+        task_description: string;
+        nft_contract: string;
+        token_range?: {
+            start: number;
+            end: number;
+        };
+        ipfs_cids?: string[];
+    }): Promise<any>;
+    submitValidation(args: {
+        request_hash: string;
+        is_valid: boolean;
+        migration_results: Array<{
+            ipfsCid: string;
+            filecoinPieceCid: string;
+            success: boolean;
+        }>;
+    }): Promise<any>;
+    getValidationStatus(args: {
+        request_hash: string;
     }): Promise<any>;
 };
 export {};
