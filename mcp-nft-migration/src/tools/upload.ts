@@ -102,13 +102,19 @@ export const uploadTools = {
 
       // Create upload script dynamically
       const uploadScript = `
+import 'dotenv/config';
 import { FilecoinUploaderV033 } from './filecoin-uploader-v033.js';
 import fs from 'fs/promises';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 async function main() {
+  // Debug environment variables
+  if (!process.env.PRIVATE_KEY) {
+    throw new Error('PRIVATE_KEY not loaded from .env');
+  }
+  if (!process.env.FILECOIN_NETWORK_RPC_URL) {
+    throw new Error('FILECOIN_NETWORK_RPC_URL not loaded from .env');
+  }
+
   const uploader = new FilecoinUploaderV033(
     process.env.PRIVATE_KEY,
     process.env.FILECOIN_NETWORK_RPC_URL
@@ -136,7 +142,6 @@ main().catch(console.error);
       // Execute upload
       const { stdout, stderr } = await execAsync('node temp-upload-script.js', {
         cwd: MVP_DEMO_PATH,
-        env: process.env,
         timeout: 600000, // 10 minutes
       });
 
