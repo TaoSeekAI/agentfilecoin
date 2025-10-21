@@ -81,9 +81,15 @@ export const uploadTools = {
             const uploadScript = `
 import { FilecoinUploaderV033 } from './filecoin-uploader-v033.js';
 import fs from 'fs/promises';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 async function main() {
-  const uploader = new FilecoinUploaderV033();
+  const uploader = new FilecoinUploaderV033(
+    process.env.PRIVATE_KEY,
+    process.env.FILECOIN_NETWORK_RPC_URL
+  );
   await uploader.initialize();
 
   const metadata = JSON.parse(await fs.readFile('${tempFile}', 'utf-8'));
