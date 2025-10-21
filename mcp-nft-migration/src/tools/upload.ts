@@ -140,35 +140,49 @@ main().catch(console.error);
       await fs.writeFile(scriptPath, uploadScript);
 
       // Execute upload
-      const { stdout, stderr } = await execAsync('node temp-upload-script.js', {
-        cwd: MVP_DEMO_PATH,
-        timeout: 600000, // 10 minutes
-      });
+      let stdout, stderr;
+      try {
+        const result = await execAsync('node temp-upload-script.js', {
+          cwd: MVP_DEMO_PATH,
+          env: process.env, // Pass environment variables from MCP Server
+          timeout: 600000, // 10 minutes
+        });
+        stdout = result.stdout;
+        stderr = result.stderr;
 
-      // Clean up
-      await fs.unlink(tempFile).catch(() => {});
-      await fs.unlink(scriptPath).catch(() => {});
+        // Clean up on success
+        await fs.unlink(tempFile).catch(() => {});
+        await fs.unlink(scriptPath).catch(() => {});
+      } catch (error: any) {
+        stdout = error.stdout || '';
+        stderr = error.stderr || '';
+        // Keep temp files on error for debugging
+        console.error(`Upload failed. Temp files preserved at:`);
+        console.error(`  Script: ${scriptPath}`);
+        console.error(`  Metadata: ${tempFile}`);
+        throw error;
+      }
 
       // Parse result
       const output = stdout + stderr;
-      let result;
+      let uploadResult;
 
       try {
         // Try to extract JSON result
         const jsonMatch = output.match(/\{[\s\S]*"pieceCid"[\s\S]*\}/);
         if (jsonMatch) {
-          result = JSON.parse(jsonMatch[0]);
+          uploadResult = JSON.parse(jsonMatch[0]);
         }
       } catch (e) {
         // If parsing fails, return raw output
       }
 
-      if (result && result.pieceCid) {
+      if (uploadResult && uploadResult.pieceCid) {
         return {
           content: [
             {
               type: 'text',
-              text: `# ✅ 上传成功\n\n**PieceCID**: \`ipfs://${result.pieceCid}\`\n**Piece ID**: ${result.pieceId}\n**Data Set ID**: ${result.dataSetId}\n\n完整输出:\n\`\`\`\n${output}\n\`\`\``,
+              text: `# ✅ 上传成功\n\n**PieceCID**: \`ipfs://${uploadResult.pieceCid}\`\n**Piece ID**: ${uploadResult.pieceId}\n**Data Set ID**: ${uploadResult.dataSetId}\n\n完整输出:\n\`\`\`\n${output}\n\`\`\``,
             },
           ],
         };
