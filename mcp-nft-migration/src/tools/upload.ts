@@ -3,12 +3,20 @@ import { promisify } from 'util';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import dotenv from 'dotenv';
 
 const execAsync = promisify(exec);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const MVP_DEMO_PATH = path.resolve(__dirname, '../../../mvp-demo');
+const PROJECT_ROOT = path.resolve(__dirname, '../..');
+const LIB_SCRIPTS_PATH = path.join(PROJECT_ROOT, 'lib/scripts');
+const TEMP_PATH = path.join(PROJECT_ROOT, 'temp');
+
+// Load environment variables from .env file
+const envPath = path.resolve(__dirname, '../../.env');
+const envConfig = dotenv.config({ path: envPath });
+const env = envConfig.parsed || {};
 
 interface ToolDefinition {
   name: string;
@@ -62,11 +70,19 @@ export const uploadTools = {
           },
         },
       },
+      {
+        name: 'batch_upload_azuki',
+        description: '批量上传 Azuki NFT 到 Filecoin',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
     ];
   },
 
   hasHandler(toolName: string): boolean {
-    return ['upload_to_filecoin', 'test_upload'].includes(toolName);
+    return ['upload_to_filecoin', 'test_upload', 'batch_upload_azuki'].includes(toolName);
   },
 
   async handleTool(toolName: string, args: any): Promise<any> {
@@ -75,6 +91,8 @@ export const uploadTools = {
         return await this.uploadToFilecoin(args);
       case 'test_upload':
         return await this.testUpload(args.file_size_mb || 1.1);
+      case 'batch_upload_azuki':
+        return await this.batchUploadAzuki();
       default:
         throw new Error(`Unknown tool: ${toolName}`);
     }
@@ -86,8 +104,11 @@ export const uploadTools = {
     contract_address: string;
   }): Promise<any> {
     try {
+      // Ensure temp directory exists
+      await fs.mkdir(TEMP_PATH, { recursive: true });
+
       // Create a temporary file with metadata
-      const tempFile = path.join(MVP_DEMO_PATH, `temp-metadata-${args.nft_token_id}.json`);
+      const tempFile = path.join(TEMP_PATH, `temp-metadata-${args.nft_token_id}.json`);
 
       // Ensure minimum 1 MB file size
       const MIN_SIZE = 1048576; // 1 MB
@@ -100,51 +121,127 @@ export const uploadTools = {
 
       await fs.writeFile(tempFile, JSON.stringify(paddedMetadata, null, 2));
 
-      // Create upload script dynamically
+      // Create upload script dynamically (using Synapse SDK directly)
       const uploadScript = `
-import 'dotenv/config';
-import { FilecoinUploaderV033 } from './filecoin-uploader-v033.js';
+import { Synapse } from '@filoz/synapse-sdk';
 import fs from 'fs/promises';
 
 async function main() {
-  // Debug environment variables
+  // Environment variables are passed from MCP server
   if (!process.env.PRIVATE_KEY) {
-    throw new Error('PRIVATE_KEY not loaded from .env');
+    throw new Error('PRIVATE_KEY not found in environment');
   }
   if (!process.env.FILECOIN_NETWORK_RPC_URL) {
-    throw new Error('FILECOIN_NETWORK_RPC_URL not loaded from .env');
+    throw new Error('FILECOIN_NETWORK_RPC_URL not found in environment');
   }
 
-  const uploader = new FilecoinUploaderV033(
-    process.env.PRIVATE_KEY,
-    process.env.FILECOIN_NETWORK_RPC_URL
-  );
-  await uploader.initialize();
-
-  const metadata = JSON.parse(await fs.readFile('${tempFile}', 'utf-8'));
-  const data = Buffer.from(JSON.stringify(metadata));
-
-  const ctx = await uploader.createStorageContext({ withCDN: false });
-  const result = await uploader.uploadToFilecoin(data, {
-    tokenId: '${args.nft_token_id}',
-    contractAddress: '${args.contract_address}'
+  const synapse = await Synapse.create({
+    privateKey: process.env.PRIVATE_KEY,
+    rpcURL: process.env.FILECOIN_NETWORK_RPC_URL,
   });
 
+  const address = await synapse.getSigner().getAddress();
+  console.log(\`✅ Wallet: \${address}\`);
+
+  const metadata = JSON.parse(await fs.readFile('${tempFile}', 'utf-8'));
+  const dataBuffer = Buffer.from(JSON.stringify(metadata));
+  console.log(\`📦 Data size: \${(dataBuffer.length / 1024 / 1024).toFixed(2)} MB\`);
+
+  // Create storage context with retry logic
+  console.log('\\n📦 Creating Storage Context...');
+  let storageContext = null;
+  let attempts = 0;
+  const MAX_ATTEMPTS = 3;
+
+  while (!storageContext && attempts < MAX_ATTEMPTS) {
+    attempts++;
+    console.log(\`   Attempt \${attempts}/\${MAX_ATTEMPTS}...\`);
+
+    try {
+      storageContext = await synapse.storage.createContext({
+        withCDN: false,
+        callbacks: {
+          onProviderSelected: (provider) => {
+            console.log(\`   ✅ Provider: \${provider.serviceProvider}\`);
+          },
+          onDataSetResolved: (info) => {
+            if (info.isExisting) {
+              console.log(\`   📂 Using existing data set: \${info.dataSetId}\`);
+            } else {
+              console.log(\`   ✨ Creating new data set: \${info.dataSetId}\`);
+            }
+          },
+          onDataSetCreationStarted: (tx) => {
+            console.log(\`   📝 Creating data set, tx: \${tx.hash}\`);
+          },
+          onDataSetCreationProgress: (progress) => {
+            if (progress.transactionMined && !progress.dataSetLive) {
+              console.log(\`   ⏳ Waiting for data set to be live...\`);
+            }
+          }
+        }
+      });
+
+      console.log(\`✅ Storage Context created\`);
+      console.log(\`   Data Set ID: \${storageContext.dataSetId}\`);
+
+    } catch (error) {
+      console.error(\`   ❌ Attempt \${attempts} failed: \${error.message}\`);
+      if (attempts < MAX_ATTEMPTS) {
+        console.log(\`   ⏳ Waiting 5 seconds before retry...\`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  if (!storageContext) {
+    throw new Error('Failed to create storage context after multiple attempts');
+  }
+
+  // Upload to Filecoin
+  console.log('\\n📤 Uploading to Filecoin...');
+  const uploadResult = await storageContext.upload(dataBuffer, {
+    onUploadComplete: (pieceCid) => {
+      console.log(\`✅ Upload complete! PieceCID: \${pieceCid}\`);
+    },
+    onPieceAdded: (tx) => {
+      console.log(\`✅ Piece added, tx: \${tx.hash}\`);
+    },
+    onPieceConfirmed: (pieceIds) => {
+      console.log(\`✅ Piece confirmed! IDs: \${pieceIds.join(', ')}\`);
+    }
+  });
+
+  const result = {
+    success: true,
+    tokenId: '${args.nft_token_id}',
+    contractAddress: '${args.contract_address}',
+    pieceCid: uploadResult.pieceCid,
+    pieceId: uploadResult.pieceId,
+    dataSetId: storageContext.dataSetId,
+    size: uploadResult.size,
+    uri: \`ipfs://\${uploadResult.pieceCid}\`,
+    verificationUrl: \`https://pdp.vxb.ai/calibration/piece/\${uploadResult.pieceCid}\`
+  };
+
   console.log(JSON.stringify(result, null, 2));
+  return result;
 }
 
 main().catch(console.error);
 `;
 
-      const scriptPath = path.join(MVP_DEMO_PATH, 'temp-upload-script.js');
+      const scriptPath = path.join(TEMP_PATH, 'temp-upload-script.js');
       await fs.writeFile(scriptPath, uploadScript);
 
       // Execute upload
       let stdout, stderr;
       try {
         const result = await execAsync('node temp-upload-script.js', {
-          cwd: MVP_DEMO_PATH,
-          env: process.env, // Pass environment variables from MCP Server
+          cwd: TEMP_PATH,
+          env: { ...process.env, ...env }, // Pass explicitly loaded env vars
           timeout: 600000, // 10 minutes
         });
         stdout = result.stdout;
@@ -212,9 +309,10 @@ main().catch(console.error);
   async testUpload(fileSizeMb: number): Promise<any> {
     try {
       const { stdout, stderr } = await execAsync('node test-real-upload-small.js', {
-        cwd: MVP_DEMO_PATH,
+        cwd: LIB_SCRIPTS_PATH,
         env: {
           ...process.env,
+          ...env, // Use explicitly loaded env vars
           TEST_FILE_SIZE_MB: fileSizeMb.toString(),
         },
         timeout: 600000, // 10 minutes
@@ -244,6 +342,47 @@ main().catch(console.error);
           },
         ],
         isError: true,
+      };
+    }
+  },
+
+  async batchUploadAzuki(): Promise<any> {
+    try {
+      const { stdout, stderr } = await execAsync('node azuki-full-migration.js', {
+        cwd: LIB_SCRIPTS_PATH,
+        env: { ...process.env, ...env }, // Use explicitly loaded env vars
+        timeout: 600000, // 10 minutes
+      });
+
+      const output = stdout + stderr;
+      const success = output.includes('✅ Successful Uploads') || output.includes('Backup Summary');
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# 批量上传结果\n\n\`\`\`\n${output}\n\`\`\`\n\n${
+              success
+                ? '✅ 批量上传完成！'
+                : '⚠️ 批量上传可能部分失败，请检查输出。'
+            }`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      const output = (error.stdout || '') + (error.stderr || '');
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# 批量上传结果\n\n\`\`\`\n${output}\n\`\`\`\n\n${
+              output.includes('✅')
+                ? '⚠️ 部分成功，请检查输出。'
+                : '❌ 批量上传失败'
+            }`,
+          },
+        ],
+        isError: !output.includes('✅'),
       };
     }
   },

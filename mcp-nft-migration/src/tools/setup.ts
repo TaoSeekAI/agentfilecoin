@@ -7,7 +7,7 @@ const execAsync = promisify(exec);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const MVP_DEMO_PATH = path.resolve(__dirname, '../../../mvp-demo');
+const LIB_SCRIPTS_PATH = path.resolve(__dirname, '../../lib/scripts');
 
 interface ToolDefinition {
   name: string;
@@ -80,7 +80,7 @@ export const setupTools = {
   async verifySetup(): Promise<any> {
     try {
       const { stdout, stderr } = await execAsync('node pre-upload-check.js', {
-        cwd: MVP_DEMO_PATH,
+        cwd: LIB_SCRIPTS_PATH,
         env: process.env,
       });
 
@@ -115,7 +115,7 @@ export const setupTools = {
   async setupApprovals(depositAmount: number): Promise<any> {
     try {
       const { stdout, stderr } = await execAsync('node setup-via-sdk.js', {
-        cwd: MVP_DEMO_PATH,
+        cwd: LIB_SCRIPTS_PATH,
         env: {
           ...process.env,
           DEPOSIT_AMOUNT: depositAmount.toString(),
@@ -154,7 +154,7 @@ export const setupTools = {
   async checkBalances(): Promise<any> {
     try {
       const { stdout, stderr } = await execAsync('node check-balances.js', {
-        cwd: MVP_DEMO_PATH,
+        cwd: LIB_SCRIPTS_PATH,
         env: process.env,
       });
 

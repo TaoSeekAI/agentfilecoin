@@ -3,12 +3,18 @@ import { promisify } from 'util';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import dotenv from 'dotenv';
 
 const execAsync = promisify(exec);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const MVP_DEMO_PATH = path.resolve(__dirname, '../../../mvp-demo');
+const LIB_CORE_PATH = path.resolve(__dirname, '../../lib/core');
+
+// Load environment variables from .env file
+const envPath = path.resolve(__dirname, '../../.env');
+const envConfig = dotenv.config({ path: envPath });
+const env = envConfig.parsed || {};
 
 interface ToolDefinition {
   name: string;
@@ -146,6 +152,27 @@ export const validationTools = {
           required: ['request_hash'],
         },
       },
+      {
+        name: 'update_agent_metadata',
+        description: '更新 ERC-8004 Agent 的 metadata，用于记录迁移后的 Filecoin URI',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            agent_id: {
+              type: 'string',
+              description: 'Agent ID',
+            },
+            metadata: {
+              type: 'object',
+              description: 'Metadata 键值对',
+              additionalProperties: {
+                type: 'string',
+              },
+            },
+          },
+          required: ['agent_id', 'metadata'],
+        },
+      },
     ];
   },
 
@@ -156,6 +183,7 @@ export const validationTools = {
       'create_validation_request',
       'submit_validation',
       'get_validation_status',
+      'update_agent_metadata',
     ].includes(toolName);
   },
 
@@ -171,6 +199,8 @@ export const validationTools = {
         return await this.submitValidation(args);
       case 'get_validation_status':
         return await this.getValidationStatus(args);
+      case 'update_agent_metadata':
+        return await this.updateAgentMetadata(args);
       default:
         throw new Error(`Unknown tool: ${toolName}`);
     }
@@ -190,12 +220,13 @@ import { ERC8004Client } from './erc8004-client.js';
 
 async function main() {
   const provider = new ethers.JsonRpcProvider(
-    process.env.VALIDATION_NETWORK_RPC_URL,
+    process.env.VALIDATION_NETWORK_RPC_URL || process.env.ETHEREUM_NETWORK_RPC_URL,
     undefined,
     { staticNetwork: true }
   );
 
-  const signer = new ethers.Wallet(process.env.VALIDATOR_PRIVATE_KEY, provider);
+  // Agent Owner uses PRIVATE_KEY (not VALIDATOR_PRIVATE_KEY)
+  const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const client = new ERC8004Client(
     provider,
@@ -230,13 +261,13 @@ async function main() {
 main().catch(console.error);
 `;
 
-      const scriptPath = path.join(MVP_DEMO_PATH, 'temp-register-agent.js');
+      const scriptPath = path.join(LIB_CORE_PATH, 'temp-register-agent.js');
       await fs.writeFile(scriptPath, registerScript);
 
       // Execute registration
       const { stdout, stderr } = await execAsync('node temp-register-agent.js', {
-        cwd: MVP_DEMO_PATH,
-        env: process.env,
+        cwd: LIB_CORE_PATH,
+        env: { ...process.env, ...env }, // Use explicitly loaded env vars
         timeout: 120000, // 2 minutes
       });
 
@@ -326,12 +357,12 @@ import { ERC8004Client } from './erc8004-client.js';
 
 async function main() {
   const provider = new ethers.JsonRpcProvider(
-    process.env.VALIDATION_NETWORK_RPC_URL,
+    process.env.VALIDATION_NETWORK_RPC_URL || process.env.ETHEREUM_NETWORK_RPC_URL,
     undefined,
     { staticNetwork: true }
   );
 
-  const signer = new ethers.Wallet(process.env.VALIDATOR_PRIVATE_KEY, provider);
+  const signer = new ethers.Wallet(process.env.VALIDATOR_PRIVATE_KEY || process.env.PRIVATE_KEY, provider);
 
   const client = new ERC8004Client(
     provider,
@@ -350,12 +381,12 @@ async function main() {
 main().catch(console.error);
 `;
 
-      const scriptPath = path.join(MVP_DEMO_PATH, 'temp-get-agent.js');
+      const scriptPath = path.join(LIB_CORE_PATH, 'temp-get-agent.js');
       await fs.writeFile(scriptPath, getAgentScript);
 
       const { stdout, stderr } = await execAsync('node temp-get-agent.js', {
-        cwd: MVP_DEMO_PATH,
-        env: process.env,
+        cwd: LIB_CORE_PATH,
+        env: { ...process.env, ...env }, // Use explicitly loaded env vars
         timeout: 60000,
       });
 
@@ -425,13 +456,19 @@ import { ERC8004Client } from './erc8004-client.js';
 
 async function main() {
   const provider = new ethers.JsonRpcProvider(
-    process.env.VALIDATION_NETWORK_RPC_URL,
+    process.env.VALIDATION_NETWORK_RPC_URL || process.env.ETHEREUM_NETWORK_RPC_URL,
     undefined,
     { staticNetwork: true }
   );
 
-  const signer = new ethers.Wallet(process.env.VALIDATOR_PRIVATE_KEY, provider);
+  // Agent Owner creates validation request using PRIVATE_KEY
+  const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   const signerAddress = await signer.getAddress();
+
+  // Get validator address from VALIDATOR_PRIVATE_KEY
+  const validatorWallet = new ethers.Wallet(process.env.VALIDATOR_PRIVATE_KEY);
+  const validatorAddress = validatorWallet.address;
+  console.log('Validator Address:', validatorAddress);
 
   const client = new ERC8004Client(
     provider,
@@ -459,7 +496,7 @@ async function main() {
   const result = await client.createValidationRequest(
     ${args.agent_id},
     taskURI,
-    signerAddress
+    validatorAddress
   );
 
   console.log('RESULT_START');
@@ -470,12 +507,12 @@ async function main() {
 main().catch(console.error);
 `;
 
-      const scriptPath = path.join(MVP_DEMO_PATH, 'temp-create-request.js');
+      const scriptPath = path.join(LIB_CORE_PATH, 'temp-create-request.js');
       await fs.writeFile(scriptPath, createRequestScript);
 
       const { stdout, stderr } = await execAsync('node temp-create-request.js', {
-        cwd: MVP_DEMO_PATH,
-        env: process.env,
+        cwd: LIB_CORE_PATH,
+        env: { ...process.env, ...env }, // Use explicitly loaded env vars
         timeout: 120000,
       });
 
@@ -574,11 +611,12 @@ import { ERC8004Client } from './erc8004-client.js';
 
 async function main() {
   const provider = new ethers.JsonRpcProvider(
-    process.env.VALIDATION_NETWORK_RPC_URL,
+    process.env.VALIDATION_NETWORK_RPC_URL || process.env.ETHEREUM_NETWORK_RPC_URL,
     undefined,
     { staticNetwork: true }
   );
 
+  // Validator submits validation response using VALIDATOR_PRIVATE_KEY
   const signer = new ethers.Wallet(process.env.VALIDATOR_PRIVATE_KEY, provider);
 
   const client = new ERC8004Client(
@@ -617,12 +655,12 @@ async function main() {
 main().catch(console.error);
 `;
 
-      const scriptPath = path.join(MVP_DEMO_PATH, 'temp-submit-validation.js');
+      const scriptPath = path.join(LIB_CORE_PATH, 'temp-submit-validation.js');
       await fs.writeFile(scriptPath, submitScript);
 
       const { stdout, stderr } = await execAsync('node temp-submit-validation.js', {
-        cwd: MVP_DEMO_PATH,
-        env: process.env,
+        cwd: LIB_CORE_PATH,
+        env: { ...process.env, ...env }, // Use explicitly loaded env vars
         timeout: 120000,
       });
 
@@ -717,12 +755,12 @@ import { ERC8004Client } from './erc8004-client.js';
 
 async function main() {
   const provider = new ethers.JsonRpcProvider(
-    process.env.VALIDATION_NETWORK_RPC_URL,
+    process.env.VALIDATION_NETWORK_RPC_URL || process.env.ETHEREUM_NETWORK_RPC_URL,
     undefined,
     { staticNetwork: true }
   );
 
-  const signer = new ethers.Wallet(process.env.VALIDATOR_PRIVATE_KEY, provider);
+  const signer = new ethers.Wallet(process.env.VALIDATOR_PRIVATE_KEY || process.env.PRIVATE_KEY, provider);
 
   const client = new ERC8004Client(
     provider,
@@ -741,12 +779,12 @@ async function main() {
 main().catch(console.error);
 `;
 
-      const scriptPath = path.join(MVP_DEMO_PATH, 'temp-get-status.js');
+      const scriptPath = path.join(LIB_CORE_PATH, 'temp-get-status.js');
       await fs.writeFile(scriptPath, getStatusScript);
 
       const { stdout, stderr } = await execAsync('node temp-get-status.js', {
-        cwd: MVP_DEMO_PATH,
-        env: process.env,
+        cwd: LIB_CORE_PATH,
+        env: { ...process.env, ...env }, // Use explicitly loaded env vars
         timeout: 60000,
       });
 
@@ -806,6 +844,231 @@ ${result.status === 'Completed' && result.isValid ? '## 🎉 验证完成\n\nNFT
           {
             type: 'text',
             text: `❌ 查询状态失败: ${error.message}\n\n输出:\n${error.stdout || ''}\n${error.stderr || ''}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  },
+
+  async updateAgentMetadata(args: {
+    agent_id: string;
+    metadata: Record<string, string>;
+  }): Promise<any> {
+    try {
+      const metadataEntries = Object.entries(args.metadata);
+
+      if (metadataEntries.length === 0) {
+        return {
+          content: [{ type: 'text', text: '❌ Metadata 不能为空' }],
+          isError: true,
+        };
+      }
+
+      // Build metadata updates for the script
+      const metadataUpdatesCode = metadataEntries
+        .map(
+          ([key, value]) =>
+            `{ key: '${key.replace(/'/g, "\\'")}', value: '${value.replace(/'/g, "\\'")}' }`
+        )
+        .join(',\n    ');
+
+      // Build script without nested template literals to avoid parsing issues
+      const updateScript =
+        "import 'dotenv/config';\n" +
+        "import { ethers } from 'ethers';\n" +
+        "\n" +
+        "async function main() {\n" +
+        "  const provider = new ethers.JsonRpcProvider(\n" +
+        "    process.env.VALIDATION_NETWORK_RPC_URL || process.env.ETHEREUM_NETWORK_RPC_URL,\n" +
+        "    undefined,\n" +
+        "    { staticNetwork: true }\n" +
+        "  );\n" +
+        "\n" +
+        "  // Agent Owner updates metadata using PRIVATE_KEY\n" +
+        "  const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);\n" +
+        "  const signerAddress = await signer.getAddress();\n" +
+        "\n" +
+        "  const identityAddress = process.env.AGENT_IDENTITY_ADDRESS;\n" +
+        `  const agentId = ${args.agent_id};\n` +
+        "\n" +
+        "  // Identity 合约 ABI\n" +
+        "  const identityAbi = [\n" +
+        "    'function ownerOf(uint256 tokenId) external view returns (address)',\n" +
+        "    'function setMetadata(uint256 agentId, string key, bytes value) external',\n" +
+        "    'function getMetadata(uint256 agentId, string key) external view returns (bytes)',\n" +
+        "    'event MetadataSet(uint256 indexed agentId, string indexed indexedKey, string key, bytes value)'\n" +
+        "  ];\n" +
+        "\n" +
+        "  const identityContract = new ethers.Contract(identityAddress, identityAbi, signer);\n" +
+        "\n" +
+        "  // 验证所有权\n" +
+        "  console.log('\\\\n👤 验证 Agent 所有权...');\n" +
+        "  const owner = await identityContract.ownerOf(agentId);\n" +
+        "  console.log('   Agent Owner: ' + owner);\n" +
+        "  console.log('   Current Signer: ' + signerAddress);\n" +
+        "\n" +
+        "  if (owner.toLowerCase() !== signerAddress.toLowerCase()) {\n" +
+        "    throw new Error('❌ 你不是这个 Agent 的 owner，无法更新 metadata');\n" +
+        "  }\n" +
+        "\n" +
+        "  // 准备 metadata 更新\n" +
+        "  const metadataUpdates = [\n" +
+        `    ${metadataUpdatesCode}\n` +
+        "  ];\n" +
+        "\n" +
+        "  console.log('\\\\n📤 更新 ' + metadataUpdates.length + ' 个 Metadata 字段...\\\\n');\n" +
+        "\n" +
+        "  const results = [];\n" +
+        "  for (const update of metadataUpdates) {\n" +
+        "    console.log('   更新 \"' + update.key + '\"...');\n" +
+        "\n" +
+        "    try {\n" +
+        "      const valueBytes = ethers.toUtf8Bytes(update.value);\n" +
+        "\n" +
+        "      const gasEstimate = await identityContract.setMetadata.estimateGas(\n" +
+        "        agentId,\n" +
+        "        update.key,\n" +
+        "        valueBytes\n" +
+        "      );\n" +
+        "      console.log('   ✅ Gas Estimate: ' + gasEstimate.toString());\n" +
+        "\n" +
+        "      const tx = await identityContract.setMetadata(\n" +
+        "        agentId,\n" +
+        "        update.key,\n" +
+        "        valueBytes\n" +
+        "      );\n" +
+        "\n" +
+        "      console.log('   Transaction: ' + tx.hash);\n" +
+        "      const receipt = await tx.wait();\n" +
+        "      console.log('   ✅ Confirmed in block ' + receipt.blockNumber);\n" +
+        "\n" +
+        "      results.push({\n" +
+        "        key: update.key,\n" +
+        "        value: update.value,\n" +
+        "        txHash: tx.hash,\n" +
+        "        blockNumber: receipt.blockNumber,\n" +
+        "        gasUsed: receipt.gasUsed.toString(),\n" +
+        "        success: true\n" +
+        "      });\n" +
+        "\n" +
+        "    } catch (error) {\n" +
+        "      console.error('   ❌ 更新失败: ' + error.message);\n" +
+        "      results.push({\n" +
+        "        key: update.key,\n" +
+        "        value: update.value,\n" +
+        "        error: error.message,\n" +
+        "        success: false\n" +
+        "      });\n" +
+        "    }\n" +
+        "  }\n" +
+        "\n" +
+        "  // 验证更新\n" +
+        "  console.log('\\\\n🔍 验证 Metadata 更新...\\\\n');\n" +
+        "  for (const update of metadataUpdates) {\n" +
+        "    try {\n" +
+        "      const storedValue = await identityContract.getMetadata(agentId, update.key);\n" +
+        "      const decodedValue = ethers.toUtf8String(storedValue);\n" +
+        "      const verified = decodedValue === update.value;\n" +
+        "      console.log('   ' + (verified ? '✅' : '❌') + ' ' + update.key + ': ' + (verified ? 'verified' : 'mismatch'));\n" +
+        "    } catch (error) {\n" +
+        "      console.log('   ⚠️  ' + update.key + ': 无法读取');\n" +
+        "    }\n" +
+        "  }\n" +
+        "\n" +
+        "  console.log('RESULT_START');\n" +
+        "  console.log(JSON.stringify({\n" +
+        "    agentId,\n" +
+        "    owner: signerAddress,\n" +
+        "    updatesCount: metadataUpdates.length,\n" +
+        "    successful: results.filter(r => r.success).length,\n" +
+        "    failed: results.filter(r => !r.success).length,\n" +
+        "    results\n" +
+        "  }, null, 2));\n" +
+        "  console.log('RESULT_END');\n" +
+        "}\n" +
+        "\n" +
+        "main().catch(console.error);\n";
+
+      const scriptPath = path.join(LIB_CORE_PATH, 'temp-update-metadata.js');
+      await fs.writeFile(scriptPath, updateScript);
+
+      // Execute update
+      const { stdout, stderr } = await execAsync('node temp-update-metadata.js', {
+        cwd: LIB_CORE_PATH,
+        env: { ...process.env, ...env }, // Use explicitly loaded env vars
+        timeout: 180000, // 3 minutes
+      });
+
+      // Clean up
+      await fs.unlink(scriptPath).catch(() => {});
+
+      const output = stdout + stderr;
+      let result;
+
+      const resultMatch = output.match(/RESULT_START\n([\s\S]*?)\nRESULT_END/);
+      if (resultMatch) {
+        result = JSON.parse(resultMatch[1]);
+      }
+
+      if (result) {
+        const successRate = Math.round((result.successful / result.updatesCount) * 100);
+
+        let responseText = `# ✅ Agent Metadata 已更新\n\n`;
+        responseText += `**Agent ID**: ${result.agentId}\n`;
+        responseText += `**Owner**: ${result.owner}\n`;
+        responseText += `**更新总数**: ${result.updatesCount}\n`;
+        responseText += `**成功**: ${result.successful} (${successRate}%)\n`;
+        responseText += `**失败**: ${result.failed}\n\n`;
+        responseText += `## 更新详情\n\n`;
+
+        for (const item of result.results) {
+          if (item.success) {
+            const valueDisplay = item.value.length > 80 ? item.value.substring(0, 80) + '...' : item.value;
+            responseText += `### ✅ ${item.key}\n\n`;
+            responseText += `- **Value**: \`${valueDisplay}\`\n`;
+            responseText += `- **Transaction**: [${item.txHash.substring(0, 10)}...](https://sepolia.etherscan.io/tx/${item.txHash})\n`;
+            responseText += `- **Block**: ${item.blockNumber}\n`;
+            responseText += `- **Gas Used**: ${item.gasUsed}\n\n`;
+          } else {
+            responseText += `### ❌ ${item.key}\n\n`;
+            responseText += `- **Error**: ${item.error}\n\n`;
+          }
+        }
+
+        responseText += `## 🔗 查看 Agent\n\n`;
+        responseText += `- [Etherscan Token](https://sepolia.etherscan.io/token/${process.env.AGENT_IDENTITY_ADDRESS}?a=${result.agentId})\n`;
+        responseText += `- [Etherscan NFT](https://sepolia.etherscan.io/nft/${process.env.AGENT_IDENTITY_ADDRESS}/${result.agentId})\n\n`;
+
+        if (result.successful > 0) {
+          responseText += `## 🎉 完成！\n\n`;
+          responseText += `你的 Agent metadata 已成功更新并记录在 Sepolia 区块链上！`;
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: responseText,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `# ⚠️ 更新结果不确定\n\n输出:\n\`\`\`\n${output}\n\`\`\``,
+            },
+          ],
+        };
+      }
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ 更新 Agent metadata 失败: ${error.message}\n\n输出:\n${error.stdout || ''}\n${error.stderr || ''}`,
           },
         ],
         isError: true,

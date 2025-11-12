@@ -3,12 +3,18 @@ import { promisify } from 'util';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import dotenv from 'dotenv';
 
 const execAsync = promisify(exec);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const MVP_DEMO_PATH = path.resolve(__dirname, '../../../mvp-demo');
+const LIB_CORE_PATH = path.resolve(__dirname, '../../lib/core');
+
+// Load environment variables from .env file
+const envPath = path.resolve(__dirname, '../../.env');
+const envConfig = dotenv.config({ path: envPath });
+const env = envConfig.parsed || {};
 
 interface ToolDefinition {
   name: string;
@@ -85,86 +91,26 @@ export const nftTools = {
 
   async nftScan(args: { contract_address: string; token_ids?: string[] }): Promise<any> {
     try {
-      // Use the existing nft-scanner.js instead of non-existent phases
-      const startTokenId = process.env.NFT_START_TOKEN_ID || '0';
-      const endTokenId = process.env.NFT_END_TOKEN_ID || '4';
+      // Use the CLI script
+      const tokenIdsArgs = args.token_ids ? args.token_ids.join(' ') : '';
 
-      const scanScript = `
-import { ethers } from 'ethers';
-import { NFTScanner } from './nft-scanner.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-async function main() {
-  const provider = new ethers.JsonRpcProvider(
-    process.env.NFT_NETWORK_RPC_URL,
-    undefined,
-    {
-      staticNetwork: true,
-    }
-  );
-
-  const scanner = new NFTScanner(
-    '${args.contract_address}',
-    provider,
-    process.env.IPFS_GATEWAY || 'https://ipfs.io/ipfs/'
-  );
-
-  console.log('Scanning contract: ${args.contract_address}');
-  ${args.token_ids ?
-    `console.log('Token IDs: ${JSON.stringify(args.token_ids)}');` :
-    `console.log('Token range: ${startTokenId} - ${endTokenId}');`
-  }
-
-  const nfts = [];
-  const tokenIds = ${args.token_ids ? JSON.stringify(args.token_ids) : `Array.from({ length: ${endTokenId} - ${startTokenId} + 1 }, (_, i) => (${startTokenId} + i).toString())`};
-
-  for (const tokenId of tokenIds) {
-    try {
-      const info = await scanner.scanToken(tokenId);
-      if (info) {
-        nfts.push({
-          tokenId,
-          owner: info.owner,
-          tokenURI: info.tokenURI,
-          metadata: info.metadata,
-        });
-      }
-    } catch (error) {
-      console.error(\`Failed to scan token \${tokenId}:\`, error.message);
-    }
-  }
-
-  const result = {
-    contract: '${args.contract_address}',
-    totalScanned: nfts.length,
-    nfts,
-  };
-
-  console.log('SCAN_RESULT_START');
-  console.log(JSON.stringify(result, null, 2));
-  console.log('SCAN_RESULT_END');
-}
-
-main().catch((error) => {
-  console.error('Scan error:', error);
-  process.exit(1);
-});
-`;
-
-      const scriptPath = path.join(MVP_DEMO_PATH, 'temp-mcp-scan.js');
-      await fs.writeFile(scriptPath, scanScript);
-
-      // Execute scan
-      const { stdout, stderr } = await execAsync('node temp-mcp-scan.js', {
-        cwd: MVP_DEMO_PATH,
-        env: process.env,
-        timeout: 120000, // 2 minutes
-      });
-
-      // Clean up
-      await fs.unlink(scriptPath).catch(() => {});
+      // Execute with contract address and optional token IDs as arguments
+      const { stdout, stderr } = await execAsync(
+        `node scan-nft-cli.js "${args.contract_address}" ${tokenIdsArgs}`,
+        {
+          cwd: LIB_CORE_PATH,
+          env: {
+            ...process.env,
+            ...env,  // Use explicitly loaded env vars
+            NFT_NETWORK_RPC_URL: env.NFT_NETWORK_RPC_URL || 'https://eth.llamarpc.com',
+            NFT_NETWORK_CHAIN_ID: env.NFT_NETWORK_CHAIN_ID || '1',
+            NFT_START_TOKEN_ID: env.NFT_START_TOKEN_ID || '0',
+            NFT_END_TOKEN_ID: env.NFT_END_TOKEN_ID || '4',
+            IPFS_GATEWAY: env.IPFS_GATEWAY || 'https://ipfs.io/ipfs/',
+          },
+          timeout: 120000, // 2 minutes
+        }
+      );
 
       // Parse result
       const output = stdout + stderr;
@@ -274,64 +220,24 @@ ${JSON.stringify(result, null, 2)}
 
   async getNftMetadata(args: { contract_address: string; token_id: string }): Promise<any> {
     try {
-      // Use the existing nft-scanner.js
-      const fetchScript = `
-import { ethers } from 'ethers';
-import { NFTScanner } from './nft-scanner.js';
-import dotenv from 'dotenv';
+      // Use the CLI script
+      const scriptPath = path.join(LIB_CORE_PATH, 'get-metadata-cli.js');
 
-dotenv.config();
-
-async function main() {
-  const provider = new ethers.JsonRpcProvider(
-    process.env.NFT_NETWORK_RPC_URL,
-    undefined,
-    {
-      staticNetwork: true,
-    }
-  );
-
-  const scanner = new NFTScanner(
-    '${args.contract_address}',
-    provider,
-    process.env.IPFS_GATEWAY || 'https://ipfs.io/ipfs/'
-  );
-
-  console.log('Fetching metadata for Token ID: ${args.token_id}');
-
-  const info = await scanner.scanToken('${args.token_id}');
-
-  const result = {
-    tokenId: '${args.token_id}',
-    contract: '${args.contract_address}',
-    owner: info.owner,
-    tokenURI: info.tokenURI,
-    metadata: info.metadata,
-  };
-
-  console.log('METADATA_RESULT_START');
-  console.log(JSON.stringify(result, null, 2));
-  console.log('METADATA_RESULT_END');
-}
-
-main().catch((error) => {
-  console.error('Fetch error:', error);
-  process.exit(1);
-});
-`;
-
-      const scriptPath = path.join(MVP_DEMO_PATH, 'temp-mcp-metadata.js');
-      await fs.writeFile(scriptPath, fetchScript);
-
-      // Execute fetch
-      const { stdout, stderr } = await execAsync('node temp-mcp-metadata.js', {
-        cwd: MVP_DEMO_PATH,
-        env: process.env,
-        timeout: 60000, // 1 minute
-      });
-
-      // Clean up
-      await fs.unlink(scriptPath).catch(() => {});
+      // Execute with contract address and token ID as arguments
+      const { stdout, stderr } = await execAsync(
+        `node get-metadata-cli.js "${args.contract_address}" "${args.token_id}"`,
+        {
+          cwd: LIB_CORE_PATH,
+          env: {
+            ...process.env,
+            ...env,  // Use explicitly loaded env vars
+            NFT_NETWORK_RPC_URL: env.NFT_NETWORK_RPC_URL || 'https://eth.llamarpc.com',
+            NFT_NETWORK_CHAIN_ID: env.NFT_NETWORK_CHAIN_ID || '1',
+            IPFS_GATEWAY: env.IPFS_GATEWAY || 'https://ipfs.io/ipfs/',
+          },
+          timeout: 60000, // 1 minute
+        }
+      );
 
       // Parse result
       const output = stdout + stderr;

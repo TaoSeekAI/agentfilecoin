@@ -8,7 +8,7 @@ const execAsync = promisify(exec);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const MVP_DEMO_PATH = path.resolve(__dirname, '../../../mvp-demo');
+const LIB_CORE_PATH = path.resolve(__dirname, '../../lib/core');
 
 interface Resource {
   uri: string;
@@ -68,7 +68,7 @@ export const resourceProviders = {
   async getMigrationStatus(): Promise<any> {
     try {
       // Check if workflow state file exists
-      const stateFile = path.join(MVP_DEMO_PATH, 'workflow-state.json');
+      const stateFile = path.join(LIB_CORE_PATH, 'workflow-state.json');
       try {
         const stateData = await fs.readFile(stateFile, 'utf-8');
         return {
@@ -91,7 +91,7 @@ export const resourceProviders = {
   async getBalances(): Promise<any> {
     try {
       const { stdout } = await execAsync('node check-balances.js', {
-        cwd: MVP_DEMO_PATH,
+        cwd: LIB_CORE_PATH,
         env: process.env,
       });
 
@@ -128,7 +128,7 @@ export const resourceProviders = {
   async getContracts(): Promise<any> {
     try {
       const { stdout } = await execAsync('node get-real-addresses.js', {
-        cwd: MVP_DEMO_PATH,
+        cwd: LIB_CORE_PATH,
         env: process.env,
       });
 
